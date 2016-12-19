@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace KaCake.Data.Models
 {
@@ -8,5 +9,7 @@ namespace KaCake.Data.Models
 
         [MaxLength(256)]
         public string Name { get; set; }
+
+        public ICollection<CourseEnrollment> Students { get; set; }
     }
 }
