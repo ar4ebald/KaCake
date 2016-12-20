@@ -7,5 +7,6 @@ namespace KaCake.Data.Models
     public class ApplicationUser : IdentityUser
     {
         public ICollection<CourseEnrollment> Courses { get; set; }
+        public ICollection<Assignment> Assignments { get; set; }
     }
 }

@@ -10,6 +10,10 @@ namespace KaCake.Data.Models
         [MaxLength(256)]
         public string Name { get; set; }
 
+        public string Description { get; set; }
+
         public ICollection<CourseEnrollment> Students { get; set; }
+
+        public ICollection<TaskGroup> TaskGroups { get; set; }
     }
 }
