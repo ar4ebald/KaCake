@@ -1,0 +1,25 @@
+﻿@using KaCake.ViewModels.Assignment
+@using KaCake.ViewModels.TaskVariant
+@model KaCake.ViewModels.Assignment.TaskGroupViewModel
+
+@{
+    ViewData["Title"] = Model.Name + " - TaskGroup";
+    var isAdmin = User.IsInRole(RoleNames.Admin);
+}
+
+<h2>@Model.Name</h2>
+
+<div class="well">@Model.Description</div>
+
+@if (isAdmin)
+{
+    <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="btn btn-default">Create new variant</a>
+}
+
+<h4>Variants (@Model.Variants.Count):</h4>
+<div class="list-group">
+    @foreach (TaskVariantViewModel variant in Model.Variants)
+    {
+        <a asp-controller="TaskVariant" asp-action="View" asp-route-id="@variant.Id" class="list-group-item">@variant.Name</a>
+    }
+</div>

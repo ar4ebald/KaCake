@@ -1,0 +1,18 @@
+﻿@model KaCake.ViewModels.Assignment.ReviewViewModel
+
+@{
+    ViewBag.Title = "Review";
+}
+
+<h2>Review assignment</h2>
+<h4>Task group: @Model.TaskGroupName</h4>
+<h4>Task variant: @Model.TaskVariantName</h4>
+<h4>For user: @Model.UserName</h4>
+
+<h4>Submissions:</h4>
+<div class="list-group">
+    @for (int i = 0; i < Model.Submissions.Count; i++)
+    {
+        <a asp-controller="Project" asp-action="Index" asp-route-id="@Model.Submissions[i].Id" class="list-group-item" target="_blank">Submission @(i + 1) at @Model.Submissions[i].Time</a>
+    }
+</div>

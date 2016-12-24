@@ -48,8 +48,6 @@ namespace KaCake.Data.Tests
             }
         }
 
-
-
         public void Dispose()
         {
             _context.Dispose();

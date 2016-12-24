@@ -1,0 +1,17 @@
+﻿@model TaskVariantViewModel
+
+@{
+    ViewData["Title"] = "Variant - " + Model.Name;
+    bool isAdmin = User.IsInRole(RoleNames.Admin);
+}
+
+<h2>Variant: @Model.Name</h2>
+
+<div class="well">@Model.Description</div>
+
+@if (isAdmin)
+{
+    <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
+        Add assignments (@Model.AssignmentsCount)
+    </a>
+}

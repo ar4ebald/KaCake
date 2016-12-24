@@ -71,8 +71,6 @@ namespace KaCake.Data
                 .HasMany(assignment => assignment.Submissions)
                 .WithOne(submission => submission.Assignment)
                 .IsRequired();
-
-
         }
     }
 }

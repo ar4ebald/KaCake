@@ -273,7 +273,7 @@ namespace KaCake.Controllers
                 //var callbackUrl = Url.Action("ResetPassword", "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
                 //await _emailSender.SendEmailAsync(model.Email, "Reset Password",
                 //   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
-                //return View("ForgotPasswordConfirmation");
+                //return Index("ForgotPasswordConfirmation");
             }
 
             // If we got this far, something failed, redisplay form

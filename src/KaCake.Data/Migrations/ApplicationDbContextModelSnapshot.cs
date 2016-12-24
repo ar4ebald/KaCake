@@ -2,6 +2,9 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
+using KaCake.Data;
+using KaCake.Data.Models;
 
 namespace KaCake.Data.Migrations
 {
@@ -11,25 +14,190 @@ namespace KaCake.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.0.0-rc3")
+                .HasAnnotation("ProductVersion", "1.1.0-rtm-22752")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+
+            modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("AccessFailedCount");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken();
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256);
+
+                    b.Property<bool>("EmailConfirmed");
+
+                    b.Property<bool>("LockoutEnabled");
+
+                    b.Property<DateTimeOffset?>("LockoutEnd");
+
+                    b.Property<string>("NormalizedEmail")
+                        .HasMaxLength(256);
+
+                    b.Property<string>("NormalizedUserName")
+                        .HasMaxLength(256);
+
+                    b.Property<string>("PasswordHash");
+
+                    b.Property<string>("PhoneNumber");
+
+                    b.Property<bool>("PhoneNumberConfirmed");
+
+                    b.Property<string>("SecurityStamp");
+
+                    b.Property<bool>("TwoFactorEnabled");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(256);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmail")
+                        .HasName("EmailIndex");
+
+                    b.HasIndex("NormalizedUserName")
+                        .IsUnique()
+                        .HasName("UserNameIndex");
+
+                    b.ToTable("AspNetUsers");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.Assignment", b =>
+                {
+                    b.Property<int>("TaskVariantId");
+
+                    b.Property<string>("UserId");
+
+                    b.Property<DateTime>("DeadlineUtc");
+
+                    b.Property<bool>("IsChecked");
+
+                    b.Property<string>("ReviewerId");
+
+                    b.Property<double>("Score");
+
+                    b.Property<int>("Status");
+
+                    b.HasKey("TaskVariantId", "UserId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Assignments");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.Course", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Description");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256);
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.CourseEnrollment", b =>
+                {
+                    b.Property<int>("CourseId");
+
+                    b.Property<string>("UserId");
+
+                    b.HasKey("CourseId", "UserId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CourseEnrollment");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.Submission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int?>("AssignmentTaskVariantId")
+                        .IsRequired();
+
+                    b.Property<string>("AssignmentUserId")
+                        .IsRequired();
+
+                    b.Property<string>("Path");
+
+                    b.Property<DateTime>("Time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssignmentTaskVariantId", "AssignmentUserId");
+
+                    b.ToTable("Submissions");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.TaskGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("CourseId");
+
+                    b.Property<string>("Description");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256);
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("TaskGroups");
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.TaskVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Description");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(256);
+
+                    b.Property<int>("TaskGroupId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TaskGroupId");
+
+                    b.ToTable("TaskVariants");
+                });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityRole", b =>
                 {
-                    b.Property<string>("Id");
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken();
 
                     b.Property<string>("Name")
-                        .HasAnnotation("MaxLength", 256);
+                        .HasMaxLength(256);
 
                     b.Property<string>("NormalizedName")
-                        .HasAnnotation("MaxLength", 256);
+                        .HasMaxLength(256);
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
+                        .IsUnique()
                         .HasName("RoleNameIndex");
 
                     b.ToTable("AspNetRoles");
@@ -101,8 +269,6 @@ namespace KaCake.Data.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("UserId");
-
                     b.ToTable("AspNetUserRoles");
                 });
 
@@ -121,53 +287,58 @@ namespace KaCake.Data.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("KaCake.Models.ApplicationUser", b =>
+            modelBuilder.Entity("KaCake.Data.Models.Assignment", b =>
                 {
-                    b.Property<string>("Id");
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId");
 
-                    b.Property<int>("AccessFailedCount");
+                    b.HasOne("KaCake.Data.Models.TaskVariant", "TaskVariant")
+                        .WithMany("Assignments")
+                        .HasForeignKey("TaskVariantId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken();
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "User")
+                        .WithMany("Assignments")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
 
-                    b.Property<string>("Email")
-                        .HasAnnotation("MaxLength", 256);
+            modelBuilder.Entity("KaCake.Data.Models.CourseEnrollment", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.Course", "Course")
+                        .WithMany("Students")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.Property<bool>("EmailConfirmed");
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "User")
+                        .WithMany("Courses")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
 
-                    b.Property<bool>("LockoutEnabled");
+            modelBuilder.Entity("KaCake.Data.Models.Submission", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.Assignment", "Assignment")
+                        .WithMany("Submissions")
+                        .HasForeignKey("AssignmentTaskVariantId", "AssignmentUserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
 
-                    b.Property<DateTimeOffset?>("LockoutEnd");
+            modelBuilder.Entity("KaCake.Data.Models.TaskGroup", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.Course", "Course")
+                        .WithMany("TaskGroups")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
 
-                    b.Property<string>("NormalizedEmail")
-                        .HasAnnotation("MaxLength", 256);
-
-                    b.Property<string>("NormalizedUserName")
-                        .HasAnnotation("MaxLength", 256);
-
-                    b.Property<string>("PasswordHash");
-
-                    b.Property<string>("PhoneNumber");
-
-                    b.Property<bool>("PhoneNumberConfirmed");
-
-                    b.Property<string>("SecurityStamp");
-
-                    b.Property<bool>("TwoFactorEnabled");
-
-                    b.Property<string>("UserName")
-                        .HasAnnotation("MaxLength", 256);
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("NormalizedEmail")
-                        .HasName("EmailIndex");
-
-                    b.HasIndex("NormalizedUserName")
-                        .IsUnique()
-                        .HasName("UserNameIndex");
-
-                    b.ToTable("AspNetUsers");
+            modelBuilder.Entity("KaCake.Data.Models.TaskVariant", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.TaskGroup", "TaskGroup")
+                        .WithMany("Variants")
+                        .HasForeignKey("TaskGroupId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityRoleClaim<string>", b =>
@@ -180,7 +351,7 @@ namespace KaCake.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityUserClaim<string>", b =>
                 {
-                    b.HasOne("KaCake.Models.ApplicationUser")
+                    b.HasOne("KaCake.Data.Models.ApplicationUser")
                         .WithMany("Claims")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -188,7 +359,7 @@ namespace KaCake.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityUserLogin<string>", b =>
                 {
-                    b.HasOne("KaCake.Models.ApplicationUser")
+                    b.HasOne("KaCake.Data.Models.ApplicationUser")
                         .WithMany("Logins")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
@@ -201,7 +372,7 @@ namespace KaCake.Data.Migrations
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("KaCake.Models.ApplicationUser")
+                    b.HasOne("KaCake.Data.Models.ApplicationUser")
                         .WithMany("Roles")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade);
