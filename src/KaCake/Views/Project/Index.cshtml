@@ -1,0 +1,69 @@
+﻿@using Newtonsoft.Json.Linq
+@model KaCake.ViewModels.Project.IndexViewModel
+@using Node = KaCake.ViewModels.Project.IndexViewModel.FileSystemEntry
+
+@functions
+{
+
+    JObject createTree(Node node, string prefix)
+    {
+        var json = new JObject()
+        {
+            ["text"] = node.Name,
+            ["file"] = prefix
+        };
+        if (node.IsDirectory)
+        {
+            json["nodes"] = new JArray(node.SubEntries?.Select(dir => createTree(dir, System.IO.Path.Combine(prefix, dir.Name))));
+            json["icon"] = "glyphicon glyphicon-folder-open";
+            json["text"] = " " + node.Name;
+            json["backColor"] = "#f4b342";
+            json["selectable"] = false;
+        }
+        return json;
+    }
+}
+
+@{
+
+    ViewBag.Title = "Project";
+}
+
+<h2>@Model.TaskGroupName / @Model.TaskVariantName / @Model.UserName (@Model.SubmissionTime)</h2>
+
+<div id="tree"></div>
+
+<div id="editor"></div>
+
+@section scripts
+{
+    <script type="text/javascript">
+        var tree = @Html.Raw(createTree(Model.Root, "")["nodes"]);
+
+        var modelist = ace.require("ace/ext/modelist");
+        var editor;
+
+        function setupEditor() {
+            editor = ace.edit("editor");
+            editor.$blockScrolling = Infinity;
+            editor.setOptions({
+                maxLines: Infinity
+            });
+            editor.setTheme("ace/theme/monokai");
+        }
+
+        $('#tree').treeview({
+            data: tree,
+            onNodeSelected: function(event, data) {
+                $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file),
+                    function(result) {
+                        if (!editor)
+                            setupEditor();
+                        editor.session.setMode(modelist.getModeForPath(data.file).mode);
+                        editor.setValue(result);
+                    }
+                );
+            }
+        });
+    </script>
+}
