@@ -33,6 +33,10 @@
 
 <div id="tree"></div>
 
+<ul class="nav nav-tabs"></ul>
+<div class="tab-content">
+</div>
+
 <div id="editor"></div>
 
 @section scripts
@@ -43,24 +47,50 @@
         var modelist = ace.require("ace/ext/modelist");
         var editor;
 
-        function setupEditor() {
-            editor = ace.edit("editor");
+        function setupEditor(id) {
+            editor = ace.edit(id);
             editor.$blockScrolling = Infinity;
             editor.setOptions({
                 maxLines: Infinity
             });
-            editor.setTheme("ace/theme/monokai");
+            return editor;
+        }
+
+        $(".nav-tabs").on("click", "a", function (e) {
+            e.preventDefault();
+            $(this).tab('show');
+        })
+            .on("click", "span", function () {
+                var anchor = $(this).siblings('a');
+
+                editor = ace.edit("editor_" + (anchor.attr('href').substr("#tab_".length)));
+                editor.destroy();
+                
+                $(anchor.attr('href')).remove();
+                $(this).parent().remove();
+                $(".nav-tabs li").children('a').first().click();
+            });
+
+        function createTab(name, text) {
+            var id = $(".nav-tabs").children().length;
+            $(".nav-tabs").append('<li><a href="#tab_' + id + '">' + name + '</a><span class="glyphicon glyphicon-remove"></span></li>');
+            $(".tab-content").append('<div class="tab-pane" id="tab_' + id + '"><div id="editor_' + id + '"></div></div>');
+
+            var editor = setupEditor("editor_" + id);
+            editor.session.setMode(modelist.getModeForPath(name).mode);
+            editor.setValue(text);
+
+            $('.nav-tabs li').children('a').first().click();
+
+            editor.selection.clearSelection();
         }
 
         $('#tree').treeview({
             data: tree,
             onNodeSelected: function(event, data) {
                 $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file),
-                    function(result) {
-                        if (!editor)
-                            setupEditor();
-                        editor.session.setMode(modelist.getModeForPath(data.file).mode);
-                        editor.setValue(result);
+                    function (result) {
+                        createTab(data.text, result);
                     }
                 );
             }

@@ -48,3 +48,16 @@ textarea {
     display: none
   }
 }
+
+.nav-tabs > li > span {
+    display: none;
+    cursor: pointer;
+    position: absolute;
+    right: 6px;
+    top: 14px;
+    color: red;
+}
+
+.nav-tabs > li:hover > span {
+    display: inline-block;
+}
