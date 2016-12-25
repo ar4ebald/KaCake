@@ -9,15 +9,14 @@
 
 <h2>@Model.Name</h2>
 
-<div class="well">@Model.Description</div>
-
-@if (isAdmin)
-{
-    <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="btn btn-default">Create new variant</a>
-}
+<div class="well">@Html.Raw(Model.Description)</div>
 
 <h4>Variants (@Model.Variants.Count):</h4>
 <div class="list-group">
+    @if (isAdmin)
+    {
+        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item"><span class="glyphicon glyphicon-plus"></span> Create new variant</a>
+    }
     @foreach (TaskVariantViewModel variant in Model.Variants)
     {
         <a asp-controller="TaskVariant" asp-action="View" asp-route-id="@variant.Id" class="list-group-item">@variant.Name</a>

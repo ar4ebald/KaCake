@@ -21,7 +21,7 @@ namespace KaCake.ViewModels.TaskGroup
 
         [Required]
         [Display(Name = "Deadline")]
-        [DisplayFormat(DataFormatString = "DD.MM.YYYY HH:mm")]
+        [DisplayFormat(DataFormatString = "dd.MM.yyyy HH:mm")]
         public DateTime DeadlineUtc { get; set; }
 
         [Display(Name = "Users to add")]

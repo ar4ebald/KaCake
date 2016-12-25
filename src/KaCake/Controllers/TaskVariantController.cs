@@ -100,7 +100,7 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Authorize(Roles = RoleNames.Admin)]
-        public async Task<IActionResult> AddAssignments(int id)
+        public IActionResult AddAssignments(int id)
         {
             var editingVariant = _context.TaskVariants
                 .Where(variant => variant.Id == id)
@@ -137,7 +137,7 @@ namespace KaCake.Controllers
 
         [HttpPost]
         [Authorize(Roles = RoleNames.Admin)]
-        public async Task<IActionResult> AddAssignments(AddAsignmentsViewModel viewModel)
+        public IActionResult AddAssignments(AddAsignmentsViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
@@ -176,10 +176,10 @@ namespace KaCake.Controllers
             var editingVariant = _context.TaskVariants
                 .Where(variant => variant.Id == viewModel.TaskVariantId)
                 .Select(variant => variant.Assignments.Select(assignment => new
-                    {
-                        assignment.User.Id,
-                        Name = assignment.User.UserName ?? assignment.User.Email
-                    })
+                {
+                    assignment.User.Id,
+                    Name = assignment.User.UserName ?? assignment.User.Email
+                })
                 )
                 .FirstOrDefault();
 

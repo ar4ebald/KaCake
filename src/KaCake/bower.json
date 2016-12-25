@@ -9,6 +9,8 @@
     "bootstrap-select": "v1.12.1",
     "eonasdan-bootstrap-datetimepicker": "v4.14.30",
     "bootstrap-treeview": "v1.2.0",
-    "ace": "v1.2.6"
+    "ace": "v1.2.6",
+    "tinymce": "scientist-tinymce-dist#4.4.8",
+    "bootstrap-list-filter": "v0.3.2"
   }
 }

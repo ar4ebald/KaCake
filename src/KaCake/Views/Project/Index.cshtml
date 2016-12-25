@@ -51,7 +51,8 @@
             editor = ace.edit(id);
             editor.$blockScrolling = Infinity;
             editor.setOptions({
-                maxLines: Infinity
+                maxLines: Infinity,
+                showPrintMargin: false
             });
             return editor;
         }
@@ -65,7 +66,7 @@
 
                 editor = ace.edit("editor_" + (anchor.attr('href').substr("#tab_".length)));
                 editor.destroy();
-                
+
                 $(anchor.attr('href')).remove();
                 $(this).parent().remove();
                 $(".nav-tabs li").children('a').first().click();
@@ -80,7 +81,7 @@
             editor.session.setMode(modelist.getModeForPath(name).mode);
             editor.setValue(text);
 
-            $('.nav-tabs li').children('a').first().click();
+            $('.nav-tabs li').children('a').last().click();
 
             editor.selection.clearSelection();
         }

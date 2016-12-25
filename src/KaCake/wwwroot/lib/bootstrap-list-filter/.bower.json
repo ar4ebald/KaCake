@@ -1,0 +1,20 @@
+{
+  "name": "bootstrap-list-filter",
+  "version": "0.3.2",
+  "main": "bootstrap-list-filter.min.js",
+  "homepage": "https://github.com/stefanocudini/bootstrap-list-filter",
+  "license": "MIT",
+  "dependencies": {
+    "bootstrap": "*"
+  },
+  "_release": "0.3.2",
+  "_resolution": {
+    "type": "version",
+    "tag": "v0.3.2",
+    "commit": "2c06f8f407acc1b7bd14cc976516c5999e748145"
+  },
+  "_source": "https://github.com/stefanocudini/bootstrap-list-filter.git",
+  "_target": "v0.3.2",
+  "_originalSource": "bootstrap-list-filter",
+  "_direct": true
+}

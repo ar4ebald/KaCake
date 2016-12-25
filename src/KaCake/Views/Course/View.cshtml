@@ -7,15 +7,14 @@
 
 <h2>Course: @Model.Name</h2>
 
-<div class="well">@Model.Description</div>
-
-@if (isAdmin)
-{
-    <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.Id" class="btn btn-default">Add task group</a>
-}
+<div class="well">@Html.Raw(Model.Description)</div>
 
 <h4>Tasks (@Model.TaskGroups.Count):</h4>
 <div class="list-group">
+    @if (isAdmin)
+    {
+        <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item"><span class="glyphicon glyphicon-plus"></span> Add task group</a>
+    }
     @foreach (var taskGroup in Model.TaskGroups)
     {
         <a asp-controller="TaskGroup" asp-action="View" asp-route-id="@taskGroup.Id" class="list-group-item">@taskGroup.Name</a>

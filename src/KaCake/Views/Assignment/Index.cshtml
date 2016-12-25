@@ -1,0 +1,42 @@
+﻿@model KaCake.ViewModels.Assignment.IndexViewModel
+
+@{
+    ViewBag.Title = "View assignments";
+}
+
+<h2>View assignments for @Model.TaskGroupName / @Model.TaskVariantName</h2>
+
+<h4>Assignments (@Model.Assignments.Count):</h4>
+
+<form role="form">
+    <div class="form-group">
+        <input id="searchinput" class="form-control" type="search" placeholder="Search..." />
+    </div>
+
+    <div id="searchlist" class="list-group">
+        @foreach (var assignment in @Model.Assignments)
+        {
+            <a asp-controller="Assignment" asp-action="Review" asp-route-variantId="@assignment.TaskVariantId" asp-route-userId="@assignment.UserId" class="list-group-item">
+                <span>
+                    @assignment.UserName
+                    @if (assignment.Status == ReviewStatus.Graded)
+                    {
+                        <text> (@assignment.Score)</text>
+                    }
+                    else
+                    {
+                        <text> (@assignment.Status)</text>
+                    }
+                </span>
+            </a>
+        }
+    </div>
+</form>
+
+@section scripts
+{
+    <script src="~/lib/bootstrap-list-filter/bootstrap-list-filter.min.js"></script>
+    <script type="text/javascript">
+        $('#searchlist').btsListFilter('#searchinput');
+    </script>
+}
