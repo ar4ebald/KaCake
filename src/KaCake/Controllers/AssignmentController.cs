@@ -36,7 +36,7 @@ namespace KaCake.Controllers
             _env = env;
         }
 
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Index(int id)
         {
             var taskData = _context.Assignments

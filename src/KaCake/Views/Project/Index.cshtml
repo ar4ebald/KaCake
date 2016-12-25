@@ -52,13 +52,11 @@
 
 <div id="tree"></div>
 
+<samp id="output" style="padding: 5px"></samp>
+
 <ul class="nav nav-tabs"></ul>
 <div class="tab-content">
 </div>
-
-<code id="output"></code>
-
-<div id="editor"></div>
 
 @section scripts
 {
@@ -66,7 +64,9 @@
     <script type="text/javascript">
         var langNames = {
             "ace/mode/csharp": "csharp",
-            "ace/mode/python": "python3"
+            "ace/mode/python": "python3",
+            "ace/mode/c_cpp": "cpp11",
+            "ace/mode/java": "java"
         };
 
         var token = @Html.Raw(createToken());
@@ -79,7 +79,8 @@
         var editor;
 
         function writeOutput(text) {
-            $("#output").append(text.replace('\n', "<br/>"));
+        console.log(text);
+            $("#output").append(text.replace(/(\r\n|[\n\r])/gi, "<br/>"));
         }
 
         var options = { stdout: writeOutput };
@@ -107,10 +108,12 @@
                                 repl.evaluate(editor.getValue(), options).then(function success(result) {
                                     writeOutput("\nProgram finished\n");
                                     if (result.error) {
-                                        writeOutput(`Error:${result.error}\n`);
-                                    } else {
-                                        writeOutput(`Result:${result.data}\n`);
+                                        writeOutput(`Error:\n${result.error}\n`);
+                                    } else if (result.data) {
+                                        writeOutput(`Result:\n${result.data}\n`);
                                     }
+                                }, function (result) {
+                                    alert(result);
                                 });
                             },
                             function() { alert("Error connecting to repl") });
@@ -122,7 +125,7 @@
                 name: "write",
                 bindKey: { win: "Ctrl-I", mac: "Command-Option-I" },
                 exec: function(editor) {
-                    writeOutput("\n");
+                    //writeOutput("\n");
                     repl.write(prompt("Inter input:") + "\n");
                 }
             });
