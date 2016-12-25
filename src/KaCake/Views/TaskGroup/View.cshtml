@@ -15,7 +15,7 @@
 <div class="list-group">
     @if (isAdmin)
     {
-        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item"><span class="glyphicon glyphicon-plus"></span> Create new variant</a>
+        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Create new variant</a>
     }
     @foreach (TaskVariantViewModel variant in Model.Variants)
     {

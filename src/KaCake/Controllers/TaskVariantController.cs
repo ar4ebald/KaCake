@@ -29,20 +29,26 @@ namespace KaCake.Controllers
             _roleManager = roleManager;
         }
 
+        [Authorize]
         public IActionResult View(int id)
         {
-            TaskVariant viewingVariant = _context.TaskVariants.Find(id);
+            string userId = _userManager.GetUserId(User);
 
-            if (viewingVariant == null)
+            TaskVariantViewModel viewModel = _context.TaskVariants
+                .Where(taskVariant => taskVariant.Id == id)
+                .Select(taskVariant => new TaskVariantViewModel()
+                {
+                    Id = id,
+                    Name = taskVariant.Name,
+                    Description = taskVariant.Description,
+                    AssignmentsCount = taskVariant.Assignments.Count,
+                    IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId)
+                }).FirstOrDefault();
+
+            if (viewModel == null)
                 return NotFound();
 
-            return View(new TaskVariantViewModel()
-            {
-                Id = id,
-                Name = viewingVariant.Name,
-                Description = viewingVariant.Description,
-                AssignmentsCount = _context.Assignments.Count(assignment => assignment.TaskVariantId == id)
-            });
+            return View(viewModel);
         }
 
         [HttpGet]

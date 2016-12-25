@@ -81,6 +81,12 @@
     <script src="~/lib/bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>
     <script src="~/lib/ace/build/src/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="~/lib/ace/build/src/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
+    <script src="~/lib/bootstrap-confirmation2/bootstrap-confirmation.min.js"></script>
+    <script type="text/javascript">
+        $('[data-toggle=confirmation]').confirmation({
+            rootSelector: '[data-toggle=confirmation]'
+        });
+</script>
 
     @RenderSection("scripts", required: false)
 </body>

@@ -25,11 +25,19 @@ namespace KaCake.Controllers
             _userManager = userManager;
         }
 
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Index(int id)
         {
-            var viewModel = _context.Submissions
-                .Where(submission => submission.Id == id)
+            var submissions = _context.Submissions
+                .Where(submission => submission.Id == id);
+
+            if (!User.IsInRole(RoleNames.Admin))
+            {
+                string userId = _userManager.GetUserId(User);
+                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+            }
+
+            var viewModel = submissions
                 .Select(submission => new
                 {
                     RootPath = submission.Path,
@@ -51,12 +59,19 @@ namespace KaCake.Controllers
             return View(viewModel.Model);
         }
 
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult GetFile(int id, [FromQuery]string file)
         {
-            string userId = _userManager.GetUserId(User);
-            string root = _context.Submissions
-                .Where(submission => submission.Id == id)
+            var submissions = _context.Submissions
+                .Where(submission => submission.Id == id);
+
+            if (!User.IsInRole(RoleNames.Admin))
+            {
+                string userId = _userManager.GetUserId(User);
+                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+            }
+
+            string root = submissions
                 .Select(submission => submission.Path)
                 .FirstOrDefault();
 

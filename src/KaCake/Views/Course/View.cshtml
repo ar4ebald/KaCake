@@ -13,7 +13,7 @@
 <div class="list-group">
     @if (isAdmin)
     {
-        <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item"><span class="glyphicon glyphicon-plus"></span> Add task group</a>
+        <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Add task group</a>
     }
     @foreach (var taskGroup in Model.TaskGroups)
     {
