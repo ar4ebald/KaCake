@@ -16,6 +16,8 @@ namespace KaCake.Controllers
 {
     public class ProjectController : Controller
     {
+        private const string CommentsFileExtension = ".zhoporeshet.json";
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
@@ -82,7 +84,41 @@ namespace KaCake.Controllers
             if (!System.IO.File.Exists(path))
                 return NotFound();
 
-            return Content(System.IO.File.ReadAllText(path));
+            string commentsPath = path + CommentsFileExtension;
+            if (System.IO.File.Exists(commentsPath))
+            {
+                return Json(new
+                {
+                    Text = System.IO.File.ReadAllText(path),
+                    Comments = System.IO.File.ReadAllText(commentsPath)
+                });
+            }
+
+            return Json(new
+            {
+                Text = System.IO.File.ReadAllText(path)
+            });
+        }
+
+        [Authorize(Roles = RoleNames.Admin)]
+        public IActionResult SaveComments(int id, string file, string commentsJson)
+        {
+            string root = _context.Submissions
+                .Where(submission => submission.Id == id)
+                .Select(submission => submission.Path)
+                .FirstOrDefault();
+
+            if (root == null || file == null || commentsJson == null)
+                return NotFound();
+
+            string path = Path.Combine(root, file);
+            if (!System.IO.File.Exists(path))
+                return NotFound();
+
+            string jsonPath = path + CommentsFileExtension;
+            System.IO.File.WriteAllText(jsonPath, commentsJson);
+
+            return Ok();
         }
 
         private static IndexViewModel.FileSystemEntry GetEntires(DirectoryInfo directory)
@@ -93,7 +129,7 @@ namespace KaCake.Controllers
                 IsDirectory = true,
                 SubEntries = directory.EnumerateDirectories()
                     .Select(GetEntires)
-                    .Concat(directory.EnumerateFiles().Select(file => new IndexViewModel.FileSystemEntry()
+                    .Concat(directory.EnumerateFiles().Where(file => !file.Name.EndsWith(CommentsFileExtension)).Select(file => new IndexViewModel.FileSystemEntry()
                     {
                         Name = Path.GetFileName(file.Name),
                         IsDirectory = false

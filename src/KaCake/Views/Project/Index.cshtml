@@ -48,10 +48,6 @@
 
 <h2>@Model.TaskGroupName / @Model.TaskVariantName / @Model.UserName (@Model.SubmissionTime)</h2>
 <div id="tree"></div>
-<ul class="nav nav-tabs"></ul>
-<div class="tab-content">
-</div>
-<div id="editor"></div>
 
 <div class="navbar-fixed-bottom transpanent-div collapse" id="comment_footer">
     <div class="container">
@@ -96,7 +92,7 @@
         var editor;
 
         function writeOutput(text) {
-        console.log(text);
+            console.log(text);
             $("#output").append(text.replace(/(\r\n|[\n\r])/gi, "<br/>"));
         }
 
@@ -104,6 +100,7 @@
 
         function setupEditor(id, name) {
             editor = ace.edit(id);
+            editor.file = name;
             editors[id] = editor;
             editor.$blockScrolling = Infinity;
             editor.setOptions({
@@ -123,15 +120,16 @@
                         repl.connect().then(
                             function() {
                                 repl.evaluate(editor.getValue(), options).then(function success(result) {
-                                    writeOutput("\nProgram finished\n");
-                                    if (result.error) {
-                                        writeOutput(`Error:\n${result.error}\n`);
-                                    } else if (result.data) {
-                                        writeOutput(`Result:\n${result.data}\n`);
-                                    }
-                                }, function (result) {
-                                    alert(result);
-                                });
+                                        writeOutput("\nProgram finished\n");
+                                        if (result.error) {
+                                            writeOutput(`Error:\n${result.error}\n`);
+                                        } else if (result.data) {
+                                            writeOutput(`Result:\n${result.data}\n`);
+                                        }
+                                    },
+                                    function(result) {
+                                        alert(result);
+                                    });
                             },
                             function() { alert("Error connecting to repl") });
                     } else
@@ -148,7 +146,7 @@
             });
             editor.commands.addCommand({
                 name: "stop",
-                bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
+                bindKey: { win: "Ctrl-P", mac: "Command-Option-P" },
                 exec: function(editor) {
                     if (repl) {
                         repl.stop();
@@ -156,94 +154,124 @@
                     }
                 }
             });
+            @if (User.IsInRole(RoleNames.Admin))
+            {
+                <text>
+                    editor.commands.addCommand({
+                        name: "save",
+                        bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
+                        exec: function(editor) {
+                            $.get("../SaveComments/@Model.SubmissionId?file=" +
+                                encodeURI(editor.file) +
+                                "&commentsJson=" +
+                                encodeURI(JSON.stringify(editor.getSession().getComments())),
+                                function(result) {
+                                    console.log(result);
+                                });
+                        }
+                    });
+                </text>
+            }
 
             function generateUUID() {
-                    var d = new Date().getTime();
-                    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                    var r = (d + Math.random()*16)%16 | 0;
-                    d = Math.floor(d/16);
-                    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
-                });
+                var d = new Date().getTime();
+                var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
+                    function(c) {
+                        var r = (d + Math.random() * 16) % 16 | 0;
+                        d = Math.floor(d / 16);
+                        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+                    });
                 return uuid;
             };
 
             var comment = null;
 
-            $('body').on('click', '#submit_comment', function(e) {
-                e.preventDefault();
+            $('body').on('click',
+                '#submit_comment',
+                function(e) {
+                    e.preventDefault();
 
-                if(comment){
-                    comment.text = new String($('#comment').val());
-                    $('#remove_comment').hide();
+                    if (comment) {
+                        comment.text = new String($('#comment').val());
+                        $('#remove_comment').hide();
+                        $('#comment_footer').collapse("hide");
+                        comment = null;
+                        $('#comment').val("");
+                        return;
+                    }
+
+                    var selectionRange = editor.getSelection().getRange();
+
+                    comment = new Object();
+
+                    comment.startRow = selectionRange.start.row;
+                    comment.startPosition = selectionRange.start.column;
+                    comment.endRow = selectionRange.end.row;
+                    comment.endPosition = selectionRange.end.column;
+                    comment.text = new String($("#comment").val());
+
+                    comment.uuid = generateUUID();
+
+                    editor.getSession().addComment(comment);
+
+                    editor.setValue(editor.getValue());
+                    editor.getSelection().setSelectionRange(selectionRange);
+
                     $('#comment_footer').collapse("hide");
+
                     comment = null;
-                     $('#comment').val("");
-                    return;
-                }
+                    $('#comment').val("");
+                });
 
-                var selectionRange = editor.getSelection().getRange();
-
-                comment = new Object();
-
-                comment.startRow = selectionRange.start.row;
-                comment.startPosition = selectionRange.start.column;
-                comment.endRow = selectionRange.end.row;
-                comment.endPosition = selectionRange.end.column;
-                comment.text = new String($("#comment").val());
-
-                comment.uuid = generateUUID();
-
-                editor.getSession().addComment(comment);
-
-                editor.setValue(editor.getValue());
-                editor.getSelection().setSelectionRange(selectionRange);
-
-                $('#comment_footer').collapse("hide");
-
-                comment = null;
-                $('#comment').val("");
-            });
-
-            $('body').on('click', '#remove_comment', function(e){
-                e.preventDefault();
-                editor.getSession().removeComment(comment);
-                editor.setValue(editor.getValue());
-                editor.getSelection().clearSelection();
-                $('#remove_comment').hide();
-                $('#comment_footer').collapse("hide");
-                comment = null;
-                $('#comment').val("");
-            });
-
-            editor.getSession().selection.on('changeSelection', function(e) {
-                if(!editor.getSelection().isEmpty()){
-                    $('#comment_footer').collapse("show");
-                } else {
+            $('body').on('click',
+                '#remove_comment',
+                function(e) {
+                    e.preventDefault();
+                    editor.getSession().removeComment(comment);
+                    editor.setValue(editor.getValue());
+                    editor.getSelection().clearSelection();
                     $('#remove_comment').hide();
                     $('#comment_footer').collapse("hide");
                     comment = null;
                     $('#comment').val("");
-                }
-            });
+                });
 
-            $('body').on('mouseenter', '.kacake_comment', function(event){
-                console.log($(this).attr('data-comment-uuid'));
-            });
+            editor.getSession().selection.on('changeSelection',
+                function(e) {
+                    if (!editor.getSelection().isEmpty()) {
+                        $('#comment_footer').collapse("show");
+                    } else {
+                        $('#remove_comment').hide();
+                        $('#comment_footer').collapse("hide");
+                        comment = null;
+                        $('#comment').val("");
+                    }
+                });
 
-            $('body').on('click', '.kacake_comment', function(event){
-                var comment_uuid = $(this).attr('data-comment-uuid');
-                comment = editor.getSession().getComment(comment_uuid);
-                $('#comment').val(new String(comment.text));
-                $('#comment_footer').collapse("show");
-                $('#remove_comment').show();
-            });
+            $('body').on('mouseenter',
+                '.kacake_comment',
+                function(event) {
+                    console.log($(this).attr('data-comment-uuid'));
+                });
 
-            $('body').on('click', '#cancel_comment', function(){
-                $('#remove_comment').hide();
-                $('#comment_footer').collapse("hide");
-                comment = null;
-                $('#comment').val("");
-            });
+            $('body').on('click',
+                '.kacake_comment',
+                function(event) {
+                    var comment_uuid = $(this).attr('data-comment-uuid');
+                    comment = editor.getSession().getComment(comment_uuid);
+                    $('#comment').val(new String(comment.text));
+                    $('#comment_footer').collapse("show");
+                    $('#remove_comment').show();
+                });
+
+            $('body').on('click',
+                '#cancel_comment',
+                function() {
+                    $('#remove_comment').hide();
+                    $('#comment_footer').collapse("hide");
+                    comment = null;
+                    $('#comment').val("");
+                });
 
             return editor;
         }
@@ -272,7 +300,7 @@
                     $(".nav-tabs li").children('a').first().click();
                 });
 
-        function createTab(name, text) {
+        function createTab(name, data) {
             var id = $(".nav-tabs").children().length;
             $(".nav-tabs").append('<li><a href="#tab_' +
                 id +
@@ -286,7 +314,14 @@
                 '"></div></div>');
 
             var editor = setupEditor("editor_" + id, name);
-            editor.setValue(text);
+            editor.setValue(data.text);
+            if (data.comments) {
+                var comments = JSON.parse(data.comments);
+                for (var i in comments) {
+                    editor.getSession().addComment(comments[i]);
+                    console.log(comments[i]);
+                }
+            }
             editors[id] = editor;
 
             $('.nav-tabs li').children('a').last().click();
