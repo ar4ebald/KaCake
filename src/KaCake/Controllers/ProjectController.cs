@@ -43,7 +43,7 @@ namespace KaCake.Controllers
                     RootPath = submission.Path,
                     Model = new IndexViewModel()
                     {
-                        UserName = submission.Assignment.User.UserName ?? submission.Assignment.User.Email,
+                        UserName = submission.Assignment.User.FullName,
                         TaskGroupName = submission.Assignment.TaskVariant.TaskGroup.Name,
                         TaskVariantName = submission.Assignment.TaskVariant.Name,
                         SubmissionTime = submission.Time,

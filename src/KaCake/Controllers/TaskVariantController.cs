@@ -88,7 +88,7 @@ namespace KaCake.Controllers
             ViewData["Reviewers"] = _context.Users.Where(user => user.Roles.Select(role => role.RoleId).Contains(roleId))
                 .Select(user => new SelectListItem
                 {
-                    Text = user.UserName ?? user.Email,
+                    Text = user.FullName,
                     Value = user.Id
                 }).ToList();
 
@@ -96,7 +96,7 @@ namespace KaCake.Controllers
                 .Where(user => !usersToRemoveIds.Contains(user.Id))
                 .Select(user => new SelectListItem()
                 {
-                    Text = user.UserName ?? user.Email,
+                    Text = user.FullName,
                     Value = user.Id
                 }).ToList();
 
@@ -118,7 +118,7 @@ namespace KaCake.Controllers
                     variant.Assignments.Select(assignment => new
                     {
                         assignment.User.Id,
-                        Name = assignment.User.UserName ?? assignment.User.Email
+                        Name = assignment.User.FullName
                     })
                 })
                 .FirstOrDefault();
@@ -184,7 +184,7 @@ namespace KaCake.Controllers
                 .Select(variant => variant.Assignments.Select(assignment => new
                 {
                     assignment.User.Id,
-                    Name = assignment.User.UserName ?? assignment.User.Email
+                    Name = assignment.User.FullName
                 })
                 )
                 .FirstOrDefault();

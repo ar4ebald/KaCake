@@ -39,13 +39,17 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult Index(int id)
         {
-            var taskData = _context.Assignments
-                .Where(assignment => assignment.TaskVariantId == id)
-                .Select(assignment => new
+            var taskData = _context.TaskVariants
+                .Where(taskVariant => taskVariant.Id == id)
+                .Select(taskVariant => new
                 {
-                    TaskGroupName = assignment.TaskVariant.TaskGroup.Name,
-                    TaskVariantName = assignment.TaskVariant.Name
+                    TaskGroupName = taskVariant.TaskGroup.Name,
+                    TaskVariantName = taskVariant.Name
                 }).FirstOrDefault();
+
+            if (taskData == null)
+                return NotFound();
+
             return View(new IndexViewModel()
             {
                 TaskGroupName = taskData.TaskGroupName,
@@ -56,7 +60,7 @@ namespace KaCake.Controllers
                     {
                         TaskVariantId = id,
                         UserId = assignment.UserId,
-                        UserName = assignment.User.UserName ?? assignment.User.Email,
+                        UserName = assignment.User.FullName,
                         Score = assignment.Score,
                         Status = assignment.Status
                     }).ToList()
@@ -183,7 +187,7 @@ namespace KaCake.Controllers
                     UserId = assignment.UserId,
                     TaskVariantId = assignment.TaskVariantId,
                     TaskVariantName = assignment.TaskVariant.Name,
-                    UserName = assignment.User.UserName ?? assignment.User.Email
+                    UserName = assignment.User.FullName
                 }).ToList();
 
             return View(new PendingReviewViewModel()
@@ -214,7 +218,7 @@ namespace KaCake.Controllers
                     TaskVariantName = assign.TaskVariant.Name,
                     VaraintId = variantId,
                     UserId = userId,
-                    UserName = assign.User.UserName ?? assign.User.Email,
+                    UserName = assign.User.FullName,
                     Status = assign.Status,
                     Score = assign.Score,
                     Submissions = assign.Submissions.Select(submission => new SubmissionViewModel()

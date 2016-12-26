@@ -12,21 +12,19 @@ namespace KaCake
     {
         public const string Admin = "Admin";
 
-        public static void ConfigureRoles(this ApplicationDbContext context)
+        public static void ConfigureRoles(this RoleManager<IdentityRole> context)
         {
             string[] roles = { Admin };
 
-            bool added = false;
-
-            foreach (var role in roles.Except(context.Roles.Select(role => role.Name)))
+            foreach (var role in roles)
             {
-                context.Roles.Add(new IdentityRole(role));
-                added = true;
-            }
-
-            if (added)
-            {
-                context.SaveChanges();
+                if (!context.RoleExistsAsync(role).Result)
+                {
+                    context.CreateAsync(new IdentityRole()
+                    {
+                        Name = role
+                    }).Wait();
+                }
             }
         }
     }
