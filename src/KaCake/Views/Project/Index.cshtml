@@ -54,7 +54,7 @@
         <div class="row">
             <form>
                 <div class="form-group">
-                    <label for="comment">Edit your comment</label>
+                    <label id="label_for_comment" for="comment">Edit your comment</label>
                     <textarea id="comment" rows="5"></textarea>
                 </div>
                 <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
@@ -285,6 +285,7 @@
                 $('#submit_comment').hide();
                 $('#remove_comment').hide();
                 $('#cancel_comment').hide();
+                $('#label_for_comment').text("View your comment");
 
                 $("#comment").attr('readonly','readonly');
 
