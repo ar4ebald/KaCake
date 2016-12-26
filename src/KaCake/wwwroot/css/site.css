@@ -14,7 +14,7 @@
 input,
 select,
 textarea {
-    max-width: 280px;
+    width: 100%;
 }
 
 /* Carousel */
@@ -60,4 +60,10 @@ textarea {
 
 .nav-tabs > li:hover > span {
     display: inline-block;
+}
+
+.transpanent-div {
+    background: rgba(255, 255, 255, 0.7);
+    padding-top: 12px;
+    border-top: 2px solid rgba(155, 155, 155, 0.77);
 }

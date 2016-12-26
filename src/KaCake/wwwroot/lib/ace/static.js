@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+console.log("suka")
+
 var http = require("http")
   , path = require("path")
   , url = require("url")
