@@ -15659,7 +15659,7 @@ position: absolute;\
 z-index: 8;\
 }\
 .kacake_comment {\
-background-color: red;\
+background-color: #e8bbdb;\
 border-bottom: 1px solid red;\
 cursor: pointer !important;\
 pointer-events: auto;\
