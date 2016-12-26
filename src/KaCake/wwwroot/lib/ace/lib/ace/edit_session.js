@@ -2350,6 +2350,22 @@ var EditSession = function(text, mode) {
         return this.documentToScreenPosition(docRow, docColumn).row;
     };
 
+    this.addComment = function(comment) {
+        this.bgTokenizer.addComment(comment);
+    }
+
+    this.getComments = function(){
+        return this.bgTokenizer.getComments();
+    }
+
+    this.getComment = function(comment_uuid){
+        return this.bgTokenizer.getComment(comment_uuid);
+    }
+
+    this.removeComment = function(comment) {
+        this.bgTokenizer.removeComment(comment);
+    }
+
     /**
      * Returns the length of the screen.
      * @returns {Number}

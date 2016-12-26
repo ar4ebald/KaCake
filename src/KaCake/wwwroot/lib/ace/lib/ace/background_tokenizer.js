@@ -57,6 +57,8 @@ var BackgroundTokenizer = function(tokenizer, editor) {
     this.states = [];
     this.currentLine = 0;
     this.tokenizer = tokenizer;
+    this.comments = []; // Every comment in file
+    this.hasCommentAtLine = [];
 
     var self = this;
 
@@ -213,6 +215,60 @@ var BackgroundTokenizer = function(tokenizer, editor) {
         return this.lines[row] || this.$tokenizeRow(row);
     };
 
+    this.addComment = function(comment) {
+        this.comments.push(comment);
+        
+        for(var i = comment.startRow; i <= comment.endRow; ++i){
+            this.hasCommentAtLine[i] = true;
+        }
+    }
+
+    this.getComments = function(){
+        return this.comments;
+    }
+
+    this.getComment = function(comment_uuid){
+        for(var i = 0; i < this.comments.length; ++i){
+            if(this.comments[i].uuid == comment_uuid){
+                return this.comments[i];
+            }
+        }
+    };
+
+    this.removeComment = function(comment) {
+        var index = this.comments.indexOf(comment);
+        this.comments.splice(index, 1);
+    }
+
+    this.getCommentsAtLine = function(row) {
+        
+        var result = [];
+
+        for(var i = 0; i < this.comments.length; ++i) {
+            if(this.comments[i].startRow <= row && row <= this.comments[i].endRow) {
+                result.push(this.comments[i]);
+            }
+        }
+
+        return result;
+    }
+
+    this.getCommentStartPosition = function(comment, row) {
+        if(comment.startRow == row) {
+            return comment.startPosition;
+        } else {
+            return 0;
+        }
+    } 
+
+    this.getCommentEndPosition = function(comment, row) {
+        if(comment.endRow == row) {
+            return comment.endPosition;
+        } else {
+            return this.doc.getLine(row).length;
+        }
+    }
+
     /**
      * [Returns the state of tokenization at the end of a row.]{: #BackgroundTokenizer.getState}
      *
@@ -239,7 +295,61 @@ var BackgroundTokenizer = function(tokenizer, editor) {
             this.currentLine = row + 1;
         }
 
-        return this.lines[row] = data.tokens;
+        var tokens = data.tokens;
+
+        for(var i = 0; i < tokens.length; ++i){
+            tokens[i].hasComment = false;
+        }
+
+        if(this.hasCommentAtLine[row]){
+            var commentsAtLine = this.getCommentsAtLine(row);
+
+            for(var i = 0; i < commentsAtLine.length; ++i) {
+                var startPosition = this.getCommentStartPosition(commentsAtLine[i], row);
+                var endPosition = this.getCommentEndPosition(commentsAtLine[i], row);
+                var currentLength = 0;
+
+                for(var j = 0; j < tokens.length; ++j) {
+
+                    var tokenLength = tokens[j].value.length;
+
+                    if(currentLength < startPosition && startPosition < currentLength + tokenLength) {
+                        var rightPart = new Object();
+                        rightPart.type=tokens[j].type;
+                        rightPart.value = tokens[j].value.substring(startPosition - currentLength);
+                        rightPart.comment = commentsAtLine[i];
+                        rightPart.hasComment = true;
+
+                        tokens.splice(j+1, 0, rightPart);
+
+                        tokens[j].value = tokens[j].value.substring(0, startPosition - currentLength);
+                        
+                        currentLength += tokens[j].value.length;
+                    } else if(currentLength < endPosition && endPosition < currentLength + tokenLength) {
+                        var rightPart = new Object();
+                        rightPart.type = tokens[j].type;
+                        rightPart.value = tokens[j].value.substring(endPosition - currentLength);
+                        tokens.splice(j+1, 0, rightPart);
+
+                        tokens[j].value = tokens[j].value.substring(0, endPosition - currentLength);
+                        tokens[j].comment = commentsAtLine[i];
+                        tokens[j].hasComment = true;
+
+                        currentLength += tokens[j].value.length;
+
+                    } else if(startPosition <= currentLength && currentLength + tokenLength <= endPosition) {
+                        tokens[j].comment = commentsAtLine[i];
+                        tokens[j].hasComment = true;
+
+                        currentLength += tokens[j].value.length;
+                    } else {
+                        currentLength += tokenLength;
+                    }
+                }
+            }
+        }
+
+        return this.lines[row] = tokens;
     };
 
 }).call(BackgroundTokenizer.prototype);

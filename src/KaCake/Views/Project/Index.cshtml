@@ -3,7 +3,6 @@
 @using Newtonsoft.Json.Linq
 @model KaCake.ViewModels.Project.IndexViewModel
 @using Node = KaCake.ViewModels.Project.IndexViewModel.FileSystemEntry
-
 @functions
 {
     JObject createToken()
@@ -42,15 +41,33 @@
         return json;
     }
 }
-
 @{
 
     ViewBag.Title = "Project";
 }
 
 <h2>@Model.TaskGroupName / @Model.TaskVariantName / @Model.UserName (@Model.SubmissionTime)</h2>
-
 <div id="tree"></div>
+<ul class="nav nav-tabs"></ul>
+<div class="tab-content">
+</div>
+<div id="editor"></div>
+
+<div class="navbar-fixed-bottom transpanent-div collapse" id="comment_footer">
+    <div class="container">
+        <div class="row">
+            <form>
+                <div class="form-group">
+                    <label for="comment">Edit your comment</label>
+                    <textarea id="comment" rows="5"></textarea>
+                </div>
+                <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
+                <button type="reset" id="remove_comment" class="btn btn-default">Remove comment</button>
+                <button type="reset" id="cancel_comment" class="btn btn-default">Cancel</button>
+            </form>
+        </div>
+    </div>
+</div>
 
 <samp id="output" style="padding: 5px"></samp>
 
@@ -139,6 +156,95 @@
                     }
                 }
             });
+
+            function generateUUID() {
+                    var d = new Date().getTime();
+                    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                    var r = (d + Math.random()*16)%16 | 0;
+                    d = Math.floor(d/16);
+                    return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+                });
+                return uuid;
+            };
+
+            var comment = null;
+
+            $('body').on('click', '#submit_comment', function(e) {
+                e.preventDefault();
+
+                if(comment){
+                    comment.text = new String($('#comment').val());
+                    $('#remove_comment').hide();
+                    $('#comment_footer').collapse("hide");
+                    comment = null;
+                     $('#comment').val("");
+                    return;
+                }
+
+                var selectionRange = editor.getSelection().getRange();
+
+                comment = new Object();
+
+                comment.startRow = selectionRange.start.row;
+                comment.startPosition = selectionRange.start.column;
+                comment.endRow = selectionRange.end.row;
+                comment.endPosition = selectionRange.end.column;
+                comment.text = new String($("#comment").val());
+
+                comment.uuid = generateUUID();
+
+                editor.getSession().addComment(comment);
+
+                editor.setValue(editor.getValue());
+                editor.getSelection().setSelectionRange(selectionRange);
+
+                $('#comment_footer').collapse("hide");
+
+                comment = null;
+                $('#comment').val("");
+            });
+
+            $('body').on('click', '#remove_comment', function(e){
+                e.preventDefault();
+                editor.getSession().removeComment(comment);
+                editor.setValue(editor.getValue());
+                editor.getSelection().clearSelection();
+                $('#remove_comment').hide();
+                $('#comment_footer').collapse("hide");
+                comment = null;
+                $('#comment').val("");
+            });
+
+            editor.getSession().selection.on('changeSelection', function(e) {
+                if(!editor.getSelection().isEmpty()){
+                    $('#comment_footer').collapse("show");
+                } else {
+                    $('#remove_comment').hide();
+                    $('#comment_footer').collapse("hide");
+                    comment = null;
+                    $('#comment').val("");
+                }
+            });
+
+            $('body').on('mouseenter', '.kacake_comment', function(event){
+                console.log($(this).attr('data-comment-uuid'));
+            });
+
+            $('body').on('click', '.kacake_comment', function(event){
+                var comment_uuid = $(this).attr('data-comment-uuid');
+                comment = editor.getSession().getComment(comment_uuid);
+                $('#comment').val(new String(comment.text));
+                $('#comment_footer').collapse("show");
+                $('#remove_comment').show();
+            });
+
+            $('body').on('click', '#cancel_comment', function(){
+                $('#remove_comment').hide();
+                $('#comment_footer').collapse("hide");
+                comment = null;
+                $('#comment').val("");
+            });
+
             return editor;
         }
 
@@ -186,6 +292,8 @@
             $('.nav-tabs li').children('a').last().click();
 
             editor.selection.clearSelection();
+
+            $('#comment_footer').collapse("hide");
         }
 
         $('#tree').treeview({

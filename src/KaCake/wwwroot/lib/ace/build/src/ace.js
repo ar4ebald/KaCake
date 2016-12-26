@@ -6945,6 +6945,8 @@ var BackgroundTokenizer = function(tokenizer, editor) {
     this.states = [];
     this.currentLine = 0;
     this.tokenizer = tokenizer;
+    this.comments = []; // Every comment in file
+    this.hasCommentAtLine = [];
 
     var self = this;
 
@@ -7048,6 +7050,60 @@ var BackgroundTokenizer = function(tokenizer, editor) {
     this.getTokens = function(row) {
         return this.lines[row] || this.$tokenizeRow(row);
     };
+
+    this.addComment = function(comment) {
+        this.comments.push(comment);
+        
+        for(var i = comment.startRow; i <= comment.endRow; ++i){
+            this.hasCommentAtLine[i] = true;
+        }
+    }
+
+    this.getComments = function(){
+        return this.comments;
+    }
+
+    this.getComment = function(comment_uuid){
+        for(var i = 0; i < this.comments.length; ++i){
+            if(this.comments[i].uuid == comment_uuid){
+                return this.comments[i];
+            }
+        }
+    };
+
+    this.removeComment = function(comment) {
+        var index = this.comments.indexOf(comment);
+        this.comments.splice(index, 1);
+    }
+
+    this.getCommentsAtLine = function(row) {
+        
+        var result = [];
+
+        for(var i = 0; i < this.comments.length; ++i) {
+            if(this.comments[i].startRow <= row && row <= this.comments[i].endRow) {
+                result.push(this.comments[i]);
+            }
+        }
+
+        return result;
+    }
+
+    this.getCommentStartPosition = function(comment, row) {
+        if(comment.startRow == row) {
+            return comment.startPosition;
+        } else {
+            return 0;
+        }
+    } 
+
+    this.getCommentEndPosition = function(comment, row) {
+        if(comment.endRow == row) {
+            return comment.endPosition;
+        } else {
+            return this.doc.getLine(row).length;
+        }
+    }
     this.getState = function(row) {
         if (this.currentLine == row)
             this.$tokenizeRow(row);
@@ -7069,7 +7125,61 @@ var BackgroundTokenizer = function(tokenizer, editor) {
             this.currentLine = row + 1;
         }
 
-        return this.lines[row] = data.tokens;
+        var tokens = data.tokens;
+
+        for(var i = 0; i < tokens.length; ++i){
+            tokens[i].hasComment = false;
+        }
+
+        if(this.hasCommentAtLine[row]){
+            var commentsAtLine = this.getCommentsAtLine(row);
+
+            for(var i = 0; i < commentsAtLine.length; ++i) {
+                var startPosition = this.getCommentStartPosition(commentsAtLine[i], row);
+                var endPosition = this.getCommentEndPosition(commentsAtLine[i], row);
+                var currentLength = 0;
+
+                for(var j = 0; j < tokens.length; ++j) {
+
+                    var tokenLength = tokens[j].value.length;
+
+                    if(currentLength < startPosition && startPosition < currentLength + tokenLength) {
+                        var rightPart = new Object();
+                        rightPart.type=tokens[j].type;
+                        rightPart.value = tokens[j].value.substring(startPosition - currentLength);
+                        rightPart.comment = commentsAtLine[i];
+                        rightPart.hasComment = true;
+
+                        tokens.splice(j+1, 0, rightPart);
+
+                        tokens[j].value = tokens[j].value.substring(0, startPosition - currentLength);
+                        
+                        currentLength += tokens[j].value.length;
+                    } else if(currentLength < endPosition && endPosition < currentLength + tokenLength) {
+                        var rightPart = new Object();
+                        rightPart.type = tokens[j].type;
+                        rightPart.value = tokens[j].value.substring(endPosition - currentLength);
+                        tokens.splice(j+1, 0, rightPart);
+
+                        tokens[j].value = tokens[j].value.substring(0, endPosition - currentLength);
+                        tokens[j].comment = commentsAtLine[i];
+                        tokens[j].hasComment = true;
+
+                        currentLength += tokens[j].value.length;
+
+                    } else if(startPosition <= currentLength && currentLength + tokenLength <= endPosition) {
+                        tokens[j].comment = commentsAtLine[i];
+                        tokens[j].hasComment = true;
+
+                        currentLength += tokens[j].value.length;
+                    } else {
+                        currentLength += tokenLength;
+                    }
+                }
+            }
+        }
+
+        return this.lines[row] = tokens;
     };
 
 }).call(BackgroundTokenizer.prototype);
@@ -10119,6 +10229,22 @@ var EditSession = function(text, mode) {
     this.documentToScreenRow = function(docRow, docColumn) {
         return this.documentToScreenPosition(docRow, docColumn).row;
     };
+
+    this.addComment = function(comment) {
+        this.bgTokenizer.addComment(comment);
+    }
+
+    this.getComments = function(){
+        return this.bgTokenizer.getComments();
+    }
+
+    this.getComment = function(comment_uuid){
+        return this.bgTokenizer.getComment(comment_uuid);
+    }
+
+    this.removeComment = function(comment) {
+        this.bgTokenizer.removeComment(comment);
+    }
     this.getScreenLength = function() {
         var screenRows = 0;
         var fold = null;
@@ -14334,38 +14460,77 @@ var Text = function(parentEl) {
         "lparen": true
     };
 
+    function createCommentSpan(comment, content, clazz, style) {
+        if(!comment){
+            return;
+        }
+
+        return "<span class='" + clazz + " kacake_comment'" + (style ? (" style='" + style + "'") : "") + " data-comment-uuid='" + comment.uuid + "'"
+        + " >" + content + "</span>"
+    }
+
     this.$renderToken = function(stringBuilder, screenColumn, token, value) {
         var self = this;
         var replaceReg = /\t|&|<|>|( +)|([\x00-\x1f\x80-\xa0\xad\u1680\u180E\u2000-\u200f\u2028\u2029\u202F\u205F\u3000\uFEFF\uFFF9-\uFFFC])|[\u1100-\u115F\u11A3-\u11A7\u11FA-\u11FF\u2329-\u232A\u2E80-\u2E99\u2E9B-\u2EF3\u2F00-\u2FD5\u2FF0-\u2FFB\u3000-\u303E\u3041-\u3096\u3099-\u30FF\u3105-\u312D\u3131-\u318E\u3190-\u31BA\u31C0-\u31E3\u31F0-\u321E\u3220-\u3247\u3250-\u32FE\u3300-\u4DBF\u4E00-\uA48C\uA490-\uA4C6\uA960-\uA97C\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFAFF\uFE10-\uFE19\uFE30-\uFE52\uFE54-\uFE66\uFE68-\uFE6B\uFF01-\uFF60\uFFE0-\uFFE6]/g;
         var replaceFunc = function(c, a, b, tabIdx, idx4) {
             if (a) {
-                return self.showInvisibles
-                    ? "<span class='ace_invisible ace_invisible_space'>" + lang.stringRepeat(self.SPACE_CHAR, c.length) + "</span>"
-                    : c;
+                if(token.hasComment){
+                    return self.showInvisibles
+                        ? createCommentSpan(token.comment, lang.stringRepeat(self.SPACE_CHAR, c.length), "ace_invisible ace_invisible_space")
+                        : c;
+                } else {
+                    return self.showInvisibles
+                        ? "<span class='ace_invisible ace_invisible_space'>" + lang.stringRepeat(self.SPACE_CHAR, c.length) + "</span>"
+                        : c;
+                }
             } else if (c == "&") {
-                return "&#38;";
+                if(token.hasComment){
+                    return createCommentSpan(token.comment, "&#38;");
+                } else {
+                    return "&#38;";
+                }  
             } else if (c == "<") {
-                return "&#60;";
+                if(token.hasComment){
+                    return createCommentSpan(token.comment, "&#60;");
+                } else {
+                    return "&#60;";
+                }
             } else if (c == ">") {
-                return "&#62;";
+                if(token.hasComment){
+                    return createCommentSpan(token.comment, "&#62;");
+                } else {
+                    return "&#62;";
+                }
             } else if (c == "\t") {
                 var tabSize = self.session.getScreenTabSize(screenColumn + tabIdx);
                 screenColumn += tabSize - 1;
-                return self.$tabStrings[tabSize];
+                if(token.hasComment){
+                    return createCommentSpan(token.comment,  self.$tabStrings[tabSize]);
+                } else {
+                    return self.$tabStrings[tabSize];
+                }
             } else if (c == "\u3000") {
                 var classToUse = self.showInvisibles ? "ace_cjk ace_invisible ace_invisible_space" : "ace_cjk";
                 var space = self.showInvisibles ? self.SPACE_CHAR : "";
                 screenColumn += 1;
-                return "<span class='" + classToUse + "' style='width:" +
-                    (self.config.characterWidth * 2) +
-                    "px'>" + space + "</span>";
+                if(token.hasComment){
+                    return  createCommentSpan(token.comment, space, classToUse, "width:" + (self.config.characterWidth * 2) + "px;");
+                } else {
+                    return "<span class='" + classToUse + "' style='width: " + (self.config.characterWidth * 2) + "px;'>" + space + "</span>";
+                }            
             } else if (b) {
-                return "<span class='ace_invisible ace_invisible_space ace_invalid'>" + self.SPACE_CHAR + "</span>";
+                if(token.hasComment){
+                    return createCommentSpan(token.comment, self.SPACE_CHAR, "ace_invisible ace_invisible_space ace_invalid");
+                } else {
+                    return "<span class='ace_invisible ace_invisible_space ace_invalid'>" + self.SPACE_CHAR + "</span>";
+                }
             } else {
                 screenColumn += 1;
-                return "<span class='ace_cjk' style='width:" +
-                    (self.config.characterWidth * 2) +
-                    "px'>" + c + "</span>";
+                if(token.hasComment){
+                    return  createCommentSpan(token.comment, c, "ace_cjk", "width:" + (self.config.characterWidth * 2) + "px;");
+                } else {
+                    return "<span class='ace_cjk' style='width:" + (self.config.characterWidth * 2) + "px;'>" + c + "</span>"
+                }
             }
         };
 
@@ -14375,27 +14540,38 @@ var Text = function(parentEl) {
             var classes = "ace_" + token.type.replace(/\./g, " ace_");
             var style = "";
             if (token.type == "fold")
-                style = " style='width:" + (token.value.length * this.config.characterWidth) + "px;' ";
-            stringBuilder.push("<span class='", classes, "'", style, ">", output, "</span>");
+                style = "width:" + (token.value.length * this.config.characterWidth) + "px;";
+            if(token.hasComment){
+                stringBuilder.push( createCommentSpan(token.comment, output, classes, style));
+            } else {
+                stringBuilder.push( "<span class='" + classes + "' " + (style? "style='" + style +"'": "") + ">" + output + "</span>");
+            }
         }
         else {
-            stringBuilder.push(output);
+            if(token.hasComment){
+                return stringBuilder.push( createCommentSpan(token.comment, output));
+            } else {
+                stringBuilder.push(output);
+            }
         }
         return screenColumn + value.length;
     };
 
-    this.renderIndentGuide = function(stringBuilder, value, max) {
+    this.renderIndentGuide = function(stringBuilder, value, max, hasComment) {
         var cols = value.search(this.$indentGuideRe);
-        if (cols <= 0 || cols >= max)
+        if (cols <= 0 || cols >= max){
             return value;
+        }
         if (value[0] == " ") {
             cols -= cols % this.tabSize;
             stringBuilder.push(lang.stringRepeat(this.$tabStrings[" "], cols/this.tabSize));
             return value.substr(cols);
         } else if (value[0] == "\t") {
             stringBuilder.push(lang.stringRepeat(this.$tabStrings["\t"], cols));
+            
             return value.substr(cols);
         }
+        
         return value;
     };
 
@@ -14410,7 +14586,7 @@ var Text = function(parentEl) {
             var value = token.value;
             if (i == 0 && this.displayIndentGuides) {
                 chars = value.length;
-                value = this.renderIndentGuide(stringBuilder, value, splitChars);
+                value = this.renderIndentGuide(stringBuilder, value, splitChars, token.hasComment);
                 if (!value)
                     continue;
                 chars -= value.length;
@@ -14435,8 +14611,6 @@ var Text = function(parentEl) {
                         );
                     }
 
-                    stringBuilder.push(lang.stringRepeat("\xa0", splits.indent));
-
                     split ++;
                     screenColumn = 0;
                     splitChars = splits[split] || Number.MAX_VALUE;
@@ -14456,7 +14630,7 @@ var Text = function(parentEl) {
         var token = tokens[0];
         var value = token.value;
         if (this.displayIndentGuides)
-            value = this.renderIndentGuide(stringBuilder, value);
+            value = this.renderIndentGuide(stringBuilder, value, [], token.hasComment);
         if (value)
             screenColumn = this.$renderToken(stringBuilder, screenColumn, token, value);
         for (var i = 1; i < tokens.length; i++) {
@@ -15483,6 +15657,12 @@ z-index: 9;\
 background-color: rgba(255, 255, 0,0.2);\
 position: absolute;\
 z-index: 8;\
+}\
+.kacake_comment {\
+background-color: #e8bbdb;\
+border-bottom: 1px solid red;\
+cursor: pointer !important;\
+pointer-events: auto;\
 }\
 .ace_br1 {border-top-left-radius    : 3px;}\
 .ace_br2 {border-top-right-radius   : 3px;}\
