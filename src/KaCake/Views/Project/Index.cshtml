@@ -173,6 +173,9 @@
                 </text>
             }
 
+        @if (User.IsInRole(RoleNames.Admin))
+            {
+                <text>
             function generateUUID() {
                 var d = new Date().getTime();
                 var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
@@ -272,8 +275,41 @@
                     comment = null;
                     $('#comment').val("");
                 });
+        </text>
+        } else
+        {
+            <text>
 
-            return editor;
+                editor.setReadOnly(true);
+
+                $('#submit_comment').hide();
+                $('#remove_comment').hide();
+                $('#cancel_comment').hide();
+
+                $("#comment").attr('readonly','readonly');
+
+                $('body').on('click',
+                '.kacake_comment',
+                function(event) {
+                    var comment_uuid = $(this).attr('data-comment-uuid');
+                    var comment = editor.getSession().getComment(comment_uuid);
+                    $('#comment').val(new String(comment.text));
+                    $('#comment_footer').collapse("show");
+                });
+
+             editor.getSession().selection.on('changeSelection',
+                function(e) {
+                    if (editor.getSelection().isEmpty()) {
+                        $('#comment_footer').collapse("hide");
+                        $('#comment').val("");
+                    }
+                });
+
+            </text>
+
+        }
+
+        return editor;
         }
 
         $(".nav-tabs").on("click",
