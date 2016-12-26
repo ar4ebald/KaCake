@@ -36,8 +36,6 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li><a asp-area="" asp-controller="Home" asp-action="Index">Home</a></li>
-                    <li><a asp-area="" asp-controller="Home" asp-action="About">About</a></li>
-                    <li><a asp-area="" asp-controller="Home" asp-action="Contact">Contact</a></li>
                     <li><a asp-area="" asp-controller="Course" asp-action="Index">Courses</a></li>
                     <li><a asp-area="" asp-controller="Assignment" asp-action="Personal">My assignments</a></li>
                     @if (User.IsInRole(RoleNames.Admin))
@@ -81,6 +79,12 @@
     <script src="~/lib/bootstrap-treeview/dist/bootstrap-treeview.min.js"></script>
     <script src="~/lib/ace/build/src/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="~/lib/ace/build/src/ext-modelist.js" type="text/javascript" charset="utf-8"></script>
+    <script src="~/lib/bootstrap-confirmation2/bootstrap-confirmation.min.js"></script>
+    <script type="text/javascript">
+        $('[data-toggle=confirmation]').confirmation({
+            rootSelector: '[data-toggle=confirmation]'
+        });
+</script>
 
     @RenderSection("scripts", required: false)
 </body>

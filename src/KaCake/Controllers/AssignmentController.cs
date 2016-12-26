@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Assignment;
@@ -14,17 +13,14 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using SharpCompress.Archives.Rar;
-using SharpCompress.Archives.Tar;
-using SharpCompress.Archives.Zip;
 using SharpCompress.Readers;
+using IndexViewModel = KaCake.ViewModels.Assignment.IndexViewModel;
 
 namespace KaCake.Controllers
 {
     public class AssignmentController : Controller
     {
-        private static HashSet<string> ArchiveExtensions = new HashSet<string>(new[]
+        private static readonly HashSet<string> ArchiveExtensions = new HashSet<string>(new[]
         {
             ".zip", ".rar", ".tar", ".7z"
         });
@@ -39,6 +35,38 @@ namespace KaCake.Controllers
             _userManager = userManager;
             _env = env;
         }
+
+        [Authorize]
+        public IActionResult Index(int id)
+        {
+            var taskData = _context.TaskVariants
+                .Where(taskVariant => taskVariant.Id == id)
+                .Select(taskVariant => new
+                {
+                    TaskGroupName = taskVariant.TaskGroup.Name,
+                    TaskVariantName = taskVariant.Name
+                }).FirstOrDefault();
+
+            if (taskData == null)
+                return NotFound();
+
+            return View(new IndexViewModel()
+            {
+                TaskGroupName = taskData.TaskGroupName,
+                TaskVariantName = taskData.TaskVariantName,
+                Assignments = _context.Assignments
+                    .Where(assignment => assignment.TaskVariantId == id)
+                    .Select(assignment => new AssignmentViewModel()
+                    {
+                        TaskVariantId = id,
+                        UserId = assignment.UserId,
+                        UserName = assignment.User.FullName,
+                        Score = assignment.Score,
+                        Status = assignment.Status
+                    }).ToList()
+            });
+        }
+
 
         [Authorize]
         public IActionResult View(int id)
@@ -159,7 +187,7 @@ namespace KaCake.Controllers
                     UserId = assignment.UserId,
                     TaskVariantId = assignment.TaskVariantId,
                     TaskVariantName = assignment.TaskVariant.Name,
-                    UserName = assignment.User.UserName ?? assignment.User.Email
+                    UserName = assignment.User.FullName
                 }).ToList();
 
             return View(new PendingReviewViewModel()
@@ -168,6 +196,7 @@ namespace KaCake.Controllers
             });
         }
 
+        [HttpGet]
         [Route("[controller]/[action]/{variantId}/{userId}")]
         [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Review(int variantId, string userId)
@@ -178,7 +207,7 @@ namespace KaCake.Controllers
             if (assignment == null)
                 return NotFound();
 
-            if (assignment.UserId != currentUserId)
+            if (assignment.ReviewerId != currentUserId)
                 return Challenge();
 
             var viewModel = _context.Assignments
@@ -187,7 +216,11 @@ namespace KaCake.Controllers
                 {
                     TaskGroupName = assign.TaskVariant.TaskGroup.Name,
                     TaskVariantName = assign.TaskVariant.Name,
-                    UserName = assign.User.UserName ?? assign.User.Email,
+                    VaraintId = variantId,
+                    UserId = userId,
+                    UserName = assign.User.FullName,
+                    Status = assign.Status,
+                    Score = assign.Score,
                     Submissions = assign.Submissions.Select(submission => new SubmissionViewModel()
                     {
                         Id = submission.Id,
@@ -196,6 +229,18 @@ namespace KaCake.Controllers
                 }).First();
 
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [Route("[controller]/[action]/{variantId}/{userId}")]
+        [Authorize(Roles = RoleNames.Admin)]
+        public IActionResult Review(int variantId, string userId, double Score)
+        {
+            var assignment = _context.Assignments.Find(variantId, userId);
+            assignment.Score = Score;
+            assignment.Status = ReviewStatus.Graded;
+            _context.SaveChanges();
+            return RedirectToAction("Review", "Assignment", new { variantId, userId });
         }
     }
 }

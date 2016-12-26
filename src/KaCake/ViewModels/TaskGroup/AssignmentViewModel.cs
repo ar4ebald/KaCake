@@ -15,6 +15,8 @@ namespace KaCake.ViewModels.TaskGroup
 
         public string TaskName { get; set; }
 
+        public string UserName { get; set; }
+
         public ReviewStatus Status { get; set; }
 
         public double Score { get; set; }

@@ -1,8 +1,27 @@
-﻿@using Newtonsoft.Json.Linq
+﻿@using System.Security.Cryptography
+@using System.Text
+@using Newtonsoft.Json.Linq
 @model KaCake.ViewModels.Project.IndexViewModel
 @using Node = KaCake.ViewModels.Project.IndexViewModel.FileSystemEntry
 @functions
 {
+    JObject createToken()
+    {
+        var time = DateTime.UtcNow.Ticks / 10000;
+        const string secret = "fre1526h6hpk4yan";
+        var key = Encoding.UTF8.GetBytes(time.ToString());
+        var value = Encoding.UTF8.GetBytes(secret);
+        using (var algorithm = new HMACSHA256(value))
+        {
+            var hash = algorithm.ComputeHash(key);
+            string base64 = Convert.ToBase64String(hash);
+            return new JObject()
+            {
+                ["msg_mac"] = base64,
+                ["time_created"] = time
+            };
+        }
+    }
 
     JObject createTree(Node node, string prefix)
     {
@@ -50,19 +69,92 @@
     </div>
 </div>
 
+<samp id="output" style="padding: 5px"></samp>
+
+<ul class="nav nav-tabs"></ul>
+<div class="tab-content">
+</div>
+
 @section scripts
 {
+    <script src="https://repl.it/lib/api.js"></script>
     <script type="text/javascript">
+        var langNames = {
+            "ace/mode/csharp": "csharp",
+            "ace/mode/python": "python3",
+            "ace/mode/c_cpp": "cpp11",
+            "ace/mode/java": "java"
+        };
+
+        var token = @Html.Raw(createToken());
+        var repl;
+
         var tree = @Html.Raw(createTree(Model.Root, "")["nodes"]);
 
         var modelist = ace.require("ace/ext/modelist");
+        var editors = {};
         var editor;
 
-        function setupEditor(id) {
+        function writeOutput(text) {
+        console.log(text);
+            $("#output").append(text.replace(/(\r\n|[\n\r])/gi, "<br/>"));
+        }
+
+        var options = { stdout: writeOutput };
+
+        function setupEditor(id, name) {
             editor = ace.edit(id);
+            editors[id] = editor;
             editor.$blockScrolling = Infinity;
             editor.setOptions({
-                maxLines: Infinity
+                maxLines: Infinity,
+                showPrintMargin: false
+            });
+            var mode = modelist.getModeForPath(name).mode;
+            editor.session.setMode(mode);
+            editor.commands.addCommand({
+                name: "run",
+                bindKey: { win: "Ctrl-R", mac: "Command-Option-R" },
+                exec: function(editor) {
+                    $("#output").text("");
+                    if (!repl) {
+                        console.log(mode, langNames[mode]);
+                        repl = new ReplitClient('api.repl.it', 80, langNames[mode], token);
+                        repl.connect().then(
+                            function() {
+                                repl.evaluate(editor.getValue(), options).then(function success(result) {
+                                    writeOutput("\nProgram finished\n");
+                                    if (result.error) {
+                                        writeOutput(`Error:\n${result.error}\n`);
+                                    } else if (result.data) {
+                                        writeOutput(`Result:\n${result.data}\n`);
+                                    }
+                                }, function (result) {
+                                    alert(result);
+                                });
+                            },
+                            function() { alert("Error connecting to repl") });
+                    } else
+                        repl.evaluate(editor.getValue(), options);
+                }
+            });
+            editor.commands.addCommand({
+                name: "write",
+                bindKey: { win: "Ctrl-I", mac: "Command-Option-I" },
+                exec: function(editor) {
+                    //writeOutput("\n");
+                    repl.write(prompt("Inter input:") + "\n");
+                }
+            });
+            editor.commands.addCommand({
+                name: "stop",
+                bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
+                exec: function(editor) {
+                    if (repl) {
+                        repl.stop();
+                        repl = null;
+                    }
+                }
             });
 
             function generateUUID() {
@@ -156,31 +248,48 @@
             return editor;
         }
 
-        $(".nav-tabs").on("click", "a", function (e) {
-            e.preventDefault();
-            $(this).tab('show');
-        })
-            .on("click", "span", function () {
-                var anchor = $(this).siblings('a');
+        $(".nav-tabs").on("click",
+                "a",
+                function(e) {
+                    if (repl) {
+                        repl.stop();
+                        repl.disconnect();
+                        repl = null;
+                    }
+                    e.preventDefault();
+                    $(this).tab('show');
+                })
+            .on("click",
+                "span",
+                function() {
+                    var anchor = $(this).siblings('a');
 
-                editor = ace.edit("editor_" + (anchor.attr('href').substr("#tab_".length)));
-                editor.destroy();
+                    editor = ace.edit("editor_" + (anchor.attr('href').substr("#tab_".length)));
+                    editor.destroy();
 
-                $(anchor.attr('href')).remove();
-                $(this).parent().remove();
-                $(".nav-tabs li").children('a').first().click();
-            });
+                    $(anchor.attr('href')).remove();
+                    $(this).parent().remove();
+                    $(".nav-tabs li").children('a').first().click();
+                });
 
         function createTab(name, text) {
             var id = $(".nav-tabs").children().length;
-            $(".nav-tabs").append('<li><a href="#tab_' + id + '">' + name + '</a><span class="glyphicon glyphicon-remove"></span></li>');
-            $(".tab-content").append('<div class="tab-pane" id="tab_' + id + '"><div id="editor_' + id + '"></div></div>');
+            $(".nav-tabs").append('<li><a href="#tab_' +
+                id +
+                '">' +
+                name +
+                '</a><span class="glyphicon glyphicon-remove"></span></li>');
+            $(".tab-content").append('<div class="tab-pane" id="tab_' +
+                id +
+                '"><div id="editor_' +
+                id +
+                '"></div></div>');
 
-            var editor = setupEditor("editor_" + id);
-            editor.session.setMode(modelist.getModeForPath(name).mode);
+            var editor = setupEditor("editor_" + id, name);
             editor.setValue(text);
+            editors[id] = editor;
 
-            $('.nav-tabs li').children('a').first().click();
+            $('.nav-tabs li').children('a').last().click();
 
             editor.selection.clearSelection();
 
@@ -191,7 +300,7 @@
             data: tree,
             onNodeSelected: function(event, data) {
                 $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file),
-                    function (result) {
+                    function(result) {
                         createTab(data.text, result);
                     }
                 );

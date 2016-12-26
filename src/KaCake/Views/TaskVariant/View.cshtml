@@ -7,11 +7,18 @@
 
 <h2>Variant: @Model.Name</h2>
 
-<div class="well">@Model.Description</div>
+<div class="well">@Html.Raw(Model.Description)</div>
 
-@if (isAdmin)
-{
-    <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
-        Add assignments (@Model.AssignmentsCount)
-    </a>
-}
+<div class="btn-group">
+    @if (Model.IsAssigned)
+    {
+        <a asp-controller="Assignment" asp-action="View" asp-route-id="@Model.Id" class="btn btn-default">View your assignment</a>
+    }
+    <a asp-controller="Assignment" asp-action="Index" asp-route-id="@Model.Id" class="btn btn-default">View assignments</a>
+    @if (isAdmin)
+    {
+        <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
+            Add or remove assignments (@Model.AssignmentsCount)
+        </a>
+    }
+</div>

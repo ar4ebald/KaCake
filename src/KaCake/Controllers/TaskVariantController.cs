@@ -29,20 +29,26 @@ namespace KaCake.Controllers
             _roleManager = roleManager;
         }
 
+        [Authorize]
         public IActionResult View(int id)
         {
-            TaskVariant viewingVariant = _context.TaskVariants.Find(id);
+            string userId = _userManager.GetUserId(User);
 
-            if (viewingVariant == null)
+            TaskVariantViewModel viewModel = _context.TaskVariants
+                .Where(taskVariant => taskVariant.Id == id)
+                .Select(taskVariant => new TaskVariantViewModel()
+                {
+                    Id = id,
+                    Name = taskVariant.Name,
+                    Description = taskVariant.Description,
+                    AssignmentsCount = taskVariant.Assignments.Count,
+                    IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId)
+                }).FirstOrDefault();
+
+            if (viewModel == null)
                 return NotFound();
 
-            return View(new TaskVariantViewModel()
-            {
-                Id = id,
-                Name = viewingVariant.Name,
-                Description = viewingVariant.Description,
-                AssignmentsCount = _context.Assignments.Count(assignment => assignment.TaskVariantId == id)
-            });
+            return View(viewModel);
         }
 
         [HttpGet]
@@ -82,7 +88,7 @@ namespace KaCake.Controllers
             ViewData["Reviewers"] = _context.Users.Where(user => user.Roles.Select(role => role.RoleId).Contains(roleId))
                 .Select(user => new SelectListItem
                 {
-                    Text = user.UserName ?? user.Email,
+                    Text = user.FullName,
                     Value = user.Id
                 }).ToList();
 
@@ -90,7 +96,7 @@ namespace KaCake.Controllers
                 .Where(user => !usersToRemoveIds.Contains(user.Id))
                 .Select(user => new SelectListItem()
                 {
-                    Text = user.UserName ?? user.Email,
+                    Text = user.FullName,
                     Value = user.Id
                 }).ToList();
 
@@ -100,7 +106,7 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Authorize(Roles = RoleNames.Admin)]
-        public async Task<IActionResult> AddAssignments(int id)
+        public IActionResult AddAssignments(int id)
         {
             var editingVariant = _context.TaskVariants
                 .Where(variant => variant.Id == id)
@@ -112,7 +118,7 @@ namespace KaCake.Controllers
                     variant.Assignments.Select(assignment => new
                     {
                         assignment.User.Id,
-                        Name = assignment.User.UserName ?? assignment.User.Email
+                        Name = assignment.User.FullName
                     })
                 })
                 .FirstOrDefault();
@@ -137,7 +143,7 @@ namespace KaCake.Controllers
 
         [HttpPost]
         [Authorize(Roles = RoleNames.Admin)]
-        public async Task<IActionResult> AddAssignments(AddAsignmentsViewModel viewModel)
+        public IActionResult AddAssignments(AddAsignmentsViewModel viewModel)
         {
             if (ModelState.IsValid)
             {
@@ -176,10 +182,10 @@ namespace KaCake.Controllers
             var editingVariant = _context.TaskVariants
                 .Where(variant => variant.Id == viewModel.TaskVariantId)
                 .Select(variant => variant.Assignments.Select(assignment => new
-                    {
-                        assignment.User.Id,
-                        Name = assignment.User.UserName ?? assignment.User.Email
-                    })
+                {
+                    assignment.User.Id,
+                    Name = assignment.User.FullName
+                })
                 )
                 .FirstOrDefault();
 

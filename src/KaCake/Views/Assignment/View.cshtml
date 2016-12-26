@@ -7,7 +7,7 @@
 
 <h2>Assignment: @Model.TaskVariant.Name</h2>
 
-<div class="well">@Model.TaskVariant.Description</div>
+<div class="well">@Html.Raw(Model.TaskVariant.Description)</div>
 
 <p>Status: @Model.Status @(Model.Status == ReviewStatus.Graded ? Model.Score.ToString(CultureInfo.InvariantCulture) : "")</p>
 

@@ -17,6 +17,8 @@ namespace KaCake.ViewModels.TaskVariant
         [MaxLength(256)]
         public string Name { get; set; }
 
+        public bool IsAssigned { get; set; }
+
         public string Description { get; set; }
 
         public int AssignmentsCount { get; set; }

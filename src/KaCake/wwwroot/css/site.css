@@ -66,4 +66,17 @@ textarea {
     background: rgba(255, 255, 255, 0.7);
     padding-top: 12px;
     border-top: 2px solid rgba(155, 155, 155, 0.77);
+
+.results tr[visible='false'],
+.no-result {
+    display: none;
+}
+
+.results tr[visible='true'] {
+    display: table-row;
+}
+
+.counter {
+    padding: 8px;
+    color: #ccc;
 }
