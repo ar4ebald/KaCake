@@ -10,6 +10,9 @@ namespace KaCake.ViewModels.Assignment
 {
     public class ReviewViewModel
     {
+        public int CourseId { get; set; }
+        public string CourseName { get; set; }
+
         public string TaskGroupName { get; set; }
         public string TaskVariantName { get; set; }
 

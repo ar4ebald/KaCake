@@ -62,8 +62,18 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Authorize(Roles = RoleNames.Admin)]
-        public IActionResult Create()
+        public IActionResult Create(int? id)
         {
+            Course editingCourse;
+            if (id.HasValue && (editingCourse = _context.Courses.Find(id.Value)) != null)
+            {
+                return View(new CreateViewModel()
+                {
+                    Id = id.GetValueOrDefault(),
+                    Name = editingCourse.Name,
+                    Description = editingCourse.Description
+                });
+            }
             return View();
         }
 
@@ -73,11 +83,20 @@ namespace KaCake.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Courses.Add(new Course()
+                Course editingCourse;
+                if ((editingCourse = _context.Courses.Find(course.Id)) != null)
                 {
-                    Name = course.Name,
-                    Description = course.Description
-                });
+                    editingCourse.Name = course.Name;
+                    editingCourse.Description = course.Description;
+                }
+                else
+                {
+                    _context.Courses.Add(new Course()
+                    {
+                        Name = course.Name,
+                        Description = course.Description
+                    });
+                }
                 _context.SaveChanges();
                 return RedirectToAction("Index", "Course");
             }

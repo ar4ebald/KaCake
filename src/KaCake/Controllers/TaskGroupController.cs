@@ -25,8 +25,20 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Authorize(Roles = RoleNames.Admin)]
-        public IActionResult Create(int id)
+        public IActionResult Create(int id, int? taskGroupId)
         {
+            TaskGroup editingGroup;
+            if (taskGroupId.HasValue && (editingGroup = _context.TaskGroups.Find(taskGroupId.Value)) != null)
+            {
+                return View(new TaskGroupViewModel()
+                {
+                    CourseId = id,
+                    Id = taskGroupId.Value,
+                    Name = editingGroup.Name,
+                    Description = editingGroup.Description
+                });
+            }
+
             return View(new TaskGroupViewModel()
             {
                 CourseId = id
@@ -39,15 +51,26 @@ namespace KaCake.Controllers
         {
             if (ModelState.IsValid)
             {
-                EntityEntry<TaskGroup> addedEntity = _context.TaskGroups.Add(new TaskGroup()
+                TaskGroup editedTaskGroup;
+                if ((editedTaskGroup = _context.TaskGroups.Find(taskGroup.Id)) != null)
                 {
-                    CourseId = taskGroup.CourseId,
-                    Name = taskGroup.Name,
-                    Description = taskGroup.Description
-                });
-                _context.SaveChanges();
+                    editedTaskGroup.Name = taskGroup.Name;
+                    editedTaskGroup.Description = taskGroup.Description;
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    var entry = _context.TaskGroups.Add(new TaskGroup()
+                    {
+                        CourseId = taskGroup.CourseId,
+                        Name = taskGroup.Name,
+                        Description = taskGroup.Description
+                    });
+                    _context.SaveChanges();
+                    taskGroup.Id = entry.Entity.Id;
+                }
 
-                return RedirectToAction("View", new { id = addedEntity.Entity.Id });
+                return RedirectToAction("View", new { id = taskGroup.Id });
             }
 
             return View(taskGroup);
@@ -56,25 +79,28 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult View(int id)
         {
-            var viewingTaskGroup = _context.TaskGroups
-                .Include(taskGroup => taskGroup.Variants)
-                .FirstOrDefault(taskGroup => taskGroup.Id == id);
+            var viewModel = _context.TaskGroups
+                .Where(taskGroup => taskGroup.Id == id)
+                .Select(taskGroup => new TaskGroupViewModel()
+                {
+                    Id = taskGroup.Id,
+                    CourseId = taskGroup.CourseId,
+                    CourseName = taskGroup.Course.Name,
+                    Name = taskGroup.Name,
+                    Description = taskGroup.Description,
+                    Variants = taskGroup.Variants.Select(variant => new TaskVariantViewModel()
+                    {
+                        Id = variant.Id,
+                        Name = variant.Name,
+                        Description = variant.Description
+                    }).ToList()
+                })
+                .FirstOrDefault();
 
-            if (viewingTaskGroup == null)
+            if (viewModel == null)
                 return NotFound();
 
-            return View(new TaskGroupViewModel()
-            {
-                Id = viewingTaskGroup.Id,
-                Name = viewingTaskGroup.Name,
-                Description = viewingTaskGroup.Description,
-                Variants = viewingTaskGroup.Variants.Select(variant => new TaskVariantViewModel()
-                {
-                    Id = variant.Id,
-                    Name = variant.Name,
-                    Description = variant.Description
-                }).ToList()
-            });
+            return View(viewModel);
         }
     }
 }

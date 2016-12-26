@@ -41,6 +41,10 @@ namespace KaCake.Controllers
                     Id = id,
                     Name = taskVariant.Name,
                     Description = taskVariant.Description,
+                    TaskGroupId = taskVariant.TaskGroupId,
+                    TaskGroupName = taskVariant.TaskGroup.Name,
+                    CourseId = taskVariant.TaskGroup.CourseId,
+                    CourseName = taskVariant.TaskGroup.Course.Name,
                     AssignmentsCount = taskVariant.Assignments.Count,
                     IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId)
                 }).FirstOrDefault();
@@ -53,8 +57,19 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Authorize(Roles = RoleNames.Admin)]
-        public IActionResult Create(int id)
+        public IActionResult Create(int id, int? taskVariantId)
         {
+            TaskVariant editingTaskVariant;
+            if (taskVariantId.HasValue && (editingTaskVariant = _context.TaskVariants.Find(taskVariantId.Value)) != null)
+            {
+                return View(new TaskVariantViewModel()
+                {
+                    TaskGroupId = id,
+                    Id = taskVariantId.Value,
+                    Name = editingTaskVariant.Name,
+                    Description = editingTaskVariant.Description
+                });
+            }
             return View(new TaskVariantViewModel
             {
                 TaskGroupId = id
@@ -67,14 +82,25 @@ namespace KaCake.Controllers
         {
             if (ModelState.IsValid)
             {
-                EntityEntry<TaskVariant> addedVariant = _context.TaskVariants.Add(new TaskVariant()
+                TaskVariant editingTaskVariant;
+                if ((editingTaskVariant = _context.TaskVariants.Find(taskVariant.Id)) != null)
                 {
-                    TaskGroupId = taskVariant.TaskGroupId,
-                    Name = taskVariant.Name,
-                    Description = taskVariant.Description,
-                });
-                _context.SaveChanges();
-                return RedirectToAction(nameof(View), new { id = addedVariant.Entity.Id });
+                    editingTaskVariant.Name = taskVariant.Name;
+                    editingTaskVariant.Description = taskVariant.Description;
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    var entity = _context.TaskVariants.Add(new TaskVariant()
+                    {
+                        TaskGroupId = taskVariant.TaskGroupId,
+                        Name = taskVariant.Name,
+                        Description = taskVariant.Description,
+                    });
+                    _context.SaveChanges();
+                    taskVariant.Id = entity.Entity.Id;
+                }
+                return RedirectToAction(nameof(View), new { id = taskVariant.Id });
             }
 
             return View(taskVariant);

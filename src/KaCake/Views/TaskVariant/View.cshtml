@@ -5,7 +5,10 @@
     bool isAdmin = User.IsInRole(RoleNames.Admin);
 }
 
-<h2>Variant: @Model.Name</h2>
+<h2>
+    <a asp-controller="Course" asp-action="View" asp-route-id="@Model.CourseId">@Model.CourseName</a> /
+    <a asp-controller="TaskGRoup" asp-action="View" asp-route-id="@Model.TaskGroupId">@Model.TaskGroupName</a> / @Model.Name
+</h2>
 
 <div class="well">@Html.Raw(Model.Description)</div>
 
@@ -20,5 +23,6 @@
         <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
             Add or remove assignments (@Model.AssignmentsCount)
         </a>
+        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.CourseId" asp-route-taskVariantId="@Model.Id" class="btn btn-warning"><span class="glyphicon glyphicon-pencil"></span> Edit TaskGroup</a>
     }
 </div>

@@ -5,7 +5,12 @@
     ViewBag.Title = "View assignments";
 }
 
-<h2>View assignments for @Model.TaskGroupName / @Model.TaskVariantName</h2>
+<h2>
+    <a asp-controller="Course" asp-action="View" asp-route-id="@Model.CourseId">@Model.CourseName</a> /
+    <a asp-controller="TaskGroup" asp-action="View" asp-route-id="@Model.TaskGroupId">@Model.TaskGroupName</a> / 
+    <a asp-controller="TaskVariant" asp-action="View" asp-route-id="@Model.TaskVariantId">@Model.TaskVariantName</a> / 
+    Assignments
+</h2>
 
 <h4>Assignments (@Model.Assignments.Count):</h4>
 

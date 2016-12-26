@@ -43,7 +43,11 @@ namespace KaCake.Controllers
                 .Where(taskVariant => taskVariant.Id == id)
                 .Select(taskVariant => new
                 {
+                    CourseId = taskVariant.TaskGroup.CourseId,
+                    CourseName = taskVariant.TaskGroup.Course.Name,
+                    TaskGroupId = taskVariant.TaskGroupId,
                     TaskGroupName = taskVariant.TaskGroup.Name,
+                    TaskVariantId = taskVariant.Id,
                     TaskVariantName = taskVariant.Name
                 }).FirstOrDefault();
 
@@ -52,7 +56,11 @@ namespace KaCake.Controllers
 
             return View(new IndexViewModel()
             {
+                CourseId = taskData.CourseId,
+                CourseName = taskData.CourseName,
+                TaskGroupId = taskData.TaskGroupId,
                 TaskGroupName = taskData.TaskGroupName,
+                TaskVariantId = taskData.TaskVariantId,
                 TaskVariantName = taskData.TaskVariantName,
                 Assignments = _context.Assignments
                     .Where(assignment => assignment.TaskVariantId == id)

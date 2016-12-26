@@ -9,7 +9,8 @@
 
 <form asp-controller="TaskGroup" asp-action="Create" Method="post" class="form-horizontal">
     <div asp-validation-summary="All" class="text-danger"></div>
-
+    
+    <input name="Id" type="hidden" value="@Model.Id" />
     <input asp-for="CourseId" />
 
     <div class="form-group">

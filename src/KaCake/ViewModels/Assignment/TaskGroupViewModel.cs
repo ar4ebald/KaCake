@@ -7,11 +7,14 @@ namespace KaCake.ViewModels.Assignment
 {
     public class TaskGroupViewModel
     {
+        [HiddenInput]
         public int Id { get; set; }
 
         [Required]
         [HiddenInput]
         public int CourseId { get; set; }
+
+        public string CourseName { get; set; }
 
         [Required]
         [MaxLength(256)]

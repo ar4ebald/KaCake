@@ -9,6 +9,8 @@
 <form asp-controller="Course" asp-action="Create" method="post" class="form-horizontal">
     <div class="form-group">
         <div asp-validation-summary="All" class="text-danger"></div>
+        
+        <input asp-for="Id"/>
 
         <div class="form-group">
             <label asp-for="Name" class="col-md-2 control-label"></label>
