@@ -84,7 +84,7 @@ namespace KaCake.Controllers
             if (ModelState.IsValid)
             {
                 Course editingCourse;
-                if ((editingCourse = _context.Courses.Find(course.Id)) != null)
+                if (course.Id.HasValue && (editingCourse = _context.Courses.Find(course.Id)) != null)
                 {
                     editingCourse.Name = course.Name;
                     editingCourse.Description = course.Description;
