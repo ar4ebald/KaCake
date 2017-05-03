@@ -8774,10 +8774,10 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\MyCake.Data\\KaCake.Data.csproj",
+      "projectUniqueName": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\KaCake.Data\\KaCake.Data.csproj",
       "projectName": "KaCake.Data",
-      "projectPath": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\MyCake.Data\\KaCake.Data.csproj",
-      "outputPath": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\MyCake.Data\\obj\\",
+      "projectPath": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\KaCake.Data\\KaCake.Data.csproj",
+      "outputPath": "C:\\Users\\17aleshka\\Documents\\MyCake\\src\\KaCake.Data\\obj\\",
       "projectStyle": "PackageReference",
       "originalTargetFrameworks": [
         "netcoreapp1.1"

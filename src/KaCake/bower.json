@@ -1,0 +1,17 @@
+{
+  "name": "asp.net",
+  "private": true,
+  "dependencies": {
+    "bootstrap": "3.3.6",
+    "jquery": "2.2.0",
+    "jquery-validation": "1.14.0",
+    "jquery-validation-unobtrusive": "3.2.6",
+    "bootstrap-select": "v1.12.1",
+    "eonasdan-bootstrap-datetimepicker": "v4.14.30",
+    "bootstrap-treeview": "v1.2.0",
+    "ace": "v1.2.6",
+    "tinymce": "scientist-tinymce-dist#4.4.8",
+    "bootstrap-list-filter": "v0.3.2",
+    "bootstrap-confirmation2": "v2.4.0"
+  }
+}
