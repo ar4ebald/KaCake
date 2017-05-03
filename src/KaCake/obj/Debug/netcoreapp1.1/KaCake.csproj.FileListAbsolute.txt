@@ -3,3 +3,15 @@ C:\Users\17aleshka\Documents\MyCake\src\MyCake\bin\Debug\netcoreapp1.1\KaCake.ru
 C:\Users\17aleshka\Documents\MyCake\src\MyCake\bin\Debug\netcoreapp1.1\KaCake.runtimeconfig.dev.json
 C:\Users\17aleshka\Documents\MyCake\src\MyCake\obj\Debug\netcoreapp1.1\KaCake.csprojResolveAssemblyReference.cache
 C:\Users\17aleshka\Documents\MyCake\src\MyCake\obj\Debug\netcoreapp1.1\KaCake.AssemblyInfo.cs
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.deps.json
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.runtimeconfig.json
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.runtimeconfig.dev.json
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\obj\Debug\netcoreapp1.1\KaCake.csprojResolveAssemblyReference.cache
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\obj\Debug\netcoreapp1.1\KaCake.AssemblyInfo.cs
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.dll.config
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.dll
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.pdb
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.Data.dll
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\bin\Debug\netcoreapp1.1\KaCake.Data.pdb
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\obj\Debug\netcoreapp1.1\KaCake.dll
+C:\Users\17aleshka\Documents\MyCake\src\KaCake\obj\Debug\netcoreapp1.1\KaCake.pdb

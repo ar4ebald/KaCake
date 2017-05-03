@@ -5,6 +5,104 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Controllers\AccountController.cs" />
+    <None Remove="Controllers\AssignmentController.cs" />
+    <None Remove="Controllers\CourseController.cs" />
+    <None Remove="Controllers\HomeController.cs" />
+    <None Remove="Controllers\ManageController.cs" />
+    <None Remove="Controllers\ProjectController.cs" />
+    <None Remove="Controllers\SubmissionController.cs" />
+    <None Remove="Controllers\TaskGroupController.cs" />
+    <None Remove="Controllers\TaskVariantController.cs" />
+    <None Remove="Program.cs" />
+    <None Remove="RoleNames.cs" />
+    <None Remove="Services\IEmailSender.cs" />
+    <None Remove="Services\ISmsSender.cs" />
+    <None Remove="Services\MessageServices.cs" />
+    <None Remove="Startup.cs" />
+    <None Remove="ViewModels\Account\ExternalLoginConfirmationViewModel.cs" />
+    <None Remove="ViewModels\Account\ForgotPasswordViewModel.cs" />
+    <None Remove="ViewModels\Account\LoginViewModel.cs" />
+    <None Remove="ViewModels\Account\RegisterViewModel.cs" />
+    <None Remove="ViewModels\Account\ResetPasswordViewModel.cs" />
+    <None Remove="ViewModels\Account\SendCodeViewModel.cs" />
+    <None Remove="ViewModels\Account\VerifyCodeViewModel.cs" />
+    <None Remove="ViewModels\Assignment\IndexViewModel.cs" />
+    <None Remove="ViewModels\Assignment\PersonalViewModel.cs" />
+    <None Remove="ViewModels\Assignment\ReviewViewModel.cs" />
+    <None Remove="ViewModels\Assignment\TaskGroupViewModel.cs" />
+    <None Remove="ViewModels\Course\CourseViewModel.cs" />
+    <None Remove="ViewModels\Course\CreateViewModel.cs" />
+    <None Remove="ViewModels\Course\IndexViewModel.cs" />
+    <None Remove="ViewModels\Home\IndexViewModel.cs" />
+    <None Remove="ViewModels\Manage\AddPhoneNumberViewModel.cs" />
+    <None Remove="ViewModels\Manage\ChangePasswordViewModel.cs" />
+    <None Remove="ViewModels\Manage\ConfigureTwoFactorViewModel.cs" />
+    <None Remove="ViewModels\Manage\FactorViewModel.cs" />
+    <None Remove="ViewModels\Manage\IndexViewModel.cs" />
+    <None Remove="ViewModels\Manage\ManageLoginsViewModel.cs" />
+    <None Remove="ViewModels\Manage\RemoveLoginViewModel.cs" />
+    <None Remove="ViewModels\Manage\SetPasswordViewModel.cs" />
+    <None Remove="ViewModels\Manage\VerifyPhoneNumberViewModel.cs" />
+    <None Remove="ViewModels\Project\IndexViewModel.cs" />
+    <None Remove="ViewModels\Submission\AddSubmissionViewModel.cs" />
+    <None Remove="ViewModels\Submission\PendingReviewViewModel.cs" />
+    <None Remove="ViewModels\Submission\SubmissionViewModel.cs" />
+    <None Remove="ViewModels\TaskGroup\AddAsignmentsViewModel.cs" />
+    <None Remove="ViewModels\TaskGroup\AssignmentViewModel.cs" />
+    <None Remove="ViewModels\TaskVariant\TaskVariantViewModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AssignmentController.cs" />
+    <Compile Include="Controllers\CourseController.cs" />
+    <Compile Include="Controllers\HomeController.cs" />
+    <Compile Include="Controllers\ManageController.cs" />
+    <Compile Include="Controllers\ProjectController.cs" />
+    <Compile Include="Controllers\SubmissionController.cs" />
+    <Compile Include="Controllers\TaskGroupController.cs" />
+    <Compile Include="Controllers\TaskVariantController.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="RoleNames.cs" />
+    <Compile Include="Services\IEmailSender.cs" />
+    <Compile Include="Services\ISmsSender.cs" />
+    <Compile Include="Services\MessageServices.cs" />
+    <Compile Include="Startup.cs" />
+    <Compile Include="ViewModels\Account\ExternalLoginConfirmationViewModel.cs" />
+    <Compile Include="ViewModels\Account\ForgotPasswordViewModel.cs" />
+    <Compile Include="ViewModels\Account\LoginViewModel.cs" />
+    <Compile Include="ViewModels\Account\RegisterViewModel.cs" />
+    <Compile Include="ViewModels\Account\ResetPasswordViewModel.cs" />
+    <Compile Include="ViewModels\Account\SendCodeViewModel.cs" />
+    <Compile Include="ViewModels\Account\VerifyCodeViewModel.cs" />
+    <Compile Include="ViewModels\Assignment\IndexViewModel.cs" />
+    <Compile Include="ViewModels\Assignment\PersonalViewModel.cs" />
+    <Compile Include="ViewModels\Assignment\ReviewViewModel.cs" />
+    <Compile Include="ViewModels\Assignment\TaskGroupViewModel.cs" />
+    <Compile Include="ViewModels\Course\CourseViewModel.cs" />
+    <Compile Include="ViewModels\Course\CreateViewModel.cs" />
+    <Compile Include="ViewModels\Course\IndexViewModel.cs" />
+    <Compile Include="ViewModels\Home\IndexViewModel.cs" />
+    <Compile Include="ViewModels\Manage\AddPhoneNumberViewModel.cs" />
+    <Compile Include="ViewModels\Manage\ChangePasswordViewModel.cs" />
+    <Compile Include="ViewModels\Manage\ConfigureTwoFactorViewModel.cs" />
+    <Compile Include="ViewModels\Manage\FactorViewModel.cs" />
+    <Compile Include="ViewModels\Manage\IndexViewModel.cs" />
+    <Compile Include="ViewModels\Manage\ManageLoginsViewModel.cs" />
+    <Compile Include="ViewModels\Manage\RemoveLoginViewModel.cs" />
+    <Compile Include="ViewModels\Manage\SetPasswordViewModel.cs" />
+    <Compile Include="ViewModels\Manage\VerifyPhoneNumberViewModel.cs" />
+    <Compile Include="ViewModels\Project\IndexViewModel.cs" />
+    <Compile Include="ViewModels\Submission\AddSubmissionViewModel.cs" />
+    <Compile Include="ViewModels\Submission\PendingReviewViewModel.cs" />
+    <Compile Include="ViewModels\Submission\SubmissionViewModel.cs" />
+    <Compile Include="ViewModels\TaskGroup\AddAsignmentsViewModel.cs" />
+    <Compile Include="ViewModels\TaskGroup\AssignmentViewModel.cs" />
+    <Compile Include="ViewModels\TaskVariant\TaskVariantViewModel.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="wwwroot\" />
   </ItemGroup>
   <ItemGroup>
@@ -20,7 +118,7 @@
     <PackageReference Include="sharpcompress" Version="0.15.2" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MyCake.Data\KaCake.Data.csproj" />
+    <ProjectReference Include="..\KaCake.Data\KaCake.Data.csproj" />
   </ItemGroup>
 
 </Project>
