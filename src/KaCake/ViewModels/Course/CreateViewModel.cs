@@ -10,7 +10,7 @@ namespace KaCake.ViewModels.Course
     public class CreateViewModel
     {
         [HiddenInput]
-        public int Id { get; set; }
+        public int? Id { get; set; }
 
         [Required]
         [MaxLength(256)]
