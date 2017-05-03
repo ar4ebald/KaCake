@@ -1,0 +1,14 @@
+﻿@model KaCake.ViewModels.Submission.SubmissionViewModel
+
+@{
+    ViewBag.Title = "Submission view";
+}
+
+<h2>Submission view</h2>
+
+<h4>Submission time: @Model.Time</h4>
+
+<div class="btn-group">
+    <a asp-controller="Project" asp-action="Index" asp-route-id="@Model.Id" class="btn btn-primary">View files</a>
+    <a asp-controller="Submission" asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger" data-toggle="confirmation">Delete submission</a>
+</div>

@@ -1,0 +1,23 @@
+﻿@model KaCake.ViewModels.Assignment.PersonalViewModel
+
+@{
+
+}
+
+<h2>My assignments:</h2>
+<div class="list-group">
+    @foreach (var assignment in Model.Assignments)
+    {
+        <a asp-controller="Assignment" asp-action="View" asp-route-id="@assignment.TaskVariantId" class="list-group-item">
+            @assignment.TaskName
+            @if (assignment.Status == ReviewStatus.Graded)
+            {
+                <text> (@assignment.Score)</text>
+            }
+            else
+            {
+                <text> (@assignment.Status)</text>
+            }
+        </a>
+    }
+</div>

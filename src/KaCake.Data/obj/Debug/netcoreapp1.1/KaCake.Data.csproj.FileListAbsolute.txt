@@ -1,0 +1,7 @@
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\bin\Debug\netcoreapp1.1\KaCake.Data.deps.json
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\bin\Debug\netcoreapp1.1\KaCake.Data.dll
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\bin\Debug\netcoreapp1.1\KaCake.Data.pdb
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\obj\Debug\netcoreapp1.1\KaCake.Data.csprojResolveAssemblyReference.cache
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\obj\Debug\netcoreapp1.1\KaCake.Data.AssemblyInfo.cs
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\obj\Debug\netcoreapp1.1\KaCake.Data.dll
+C:\Users\17aleshka\Documents\MyCake\src\MyCake.Data\obj\Debug\netcoreapp1.1\KaCake.Data.pdb

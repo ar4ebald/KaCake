@@ -1,0 +1,14 @@
+﻿@model KaCake.ViewModels.Submission.PendingReviewViewModel
+
+@{
+    ViewBag.Title = "Pending review assignments";
+}
+
+<h2>Pending review assignments (@Model.Assignments.Count)</h2>
+
+<div class="list-group">
+    @foreach (var assignment in Model.Assignments)
+    {
+        <a asp-controller="Assignment" asp-action="Review" asp-route-variantId="@assignment.TaskVariantId" asp-route-userId="@assignment.UserId" class="list-group-item">@assignment.TaskVariantName (@assignment.UserName)</a>
+    }
+</div>

@@ -1,0 +1,53 @@
+﻿@using KaCake.ViewModels.Assignment
+@using Newtonsoft.Json.Linq
+@using IndexViewModel = KaCake.ViewModels.Home.IndexViewModel
+@model IndexViewModel
+
+@functions
+{
+
+    JObject CreateTree(IndexViewModel node)
+    {
+        var json = new JObject() { ["selectable"] = false };
+        CourseViewModel course;
+        TaskGroupViewModel taskGroup;
+        TaskVariantViewModel taskVariant;
+        if ((course = node.ViewModel as CourseViewModel) != null)
+        {
+            json["href"] = Url.Action("View", "Course", new { id = course.Id });
+            json["text"] = course.Name;
+        }
+        else if ((taskGroup = node.ViewModel as TaskGroupViewModel) != null)
+        {
+            json["href"] = Url.Action("View", "TaskGroup", new { id = taskGroup.Id });
+            json["text"] = taskGroup.Name;
+        }
+        else if ((taskVariant = node.ViewModel as TaskVariantViewModel) != null)
+        {
+            json["href"] = Url.Action("View", "TaskVariant", new { id = taskVariant.Id });
+            json["text"] = taskVariant.Name;
+        }
+        if (node.SubTree != null)
+        {
+            json["nodes"] = new JArray(node.SubTree.Select(CreateTree));
+        }
+        return json;
+    }
+
+}
+
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<h2>Site map</h2>
+
+<div id="tree"></div>
+
+@section scripts
+{
+    <script type="text/javascript">
+        var tree = @Html.Raw(CreateTree(Model)["nodes"]);
+        $('#tree').treeview({ data: tree, enableLinks: true });
+    </script>
+}

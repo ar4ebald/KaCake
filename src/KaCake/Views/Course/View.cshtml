@@ -1,0 +1,23 @@
+@model KaCake.ViewModels.Course.CourseViewModel
+
+@{
+    ViewData["Title"] = "View";
+    bool isAdmin = User.IsInRole(RoleNames.Admin);
+}
+
+<h2>@Model.Name</h2>
+
+<div class="well">@Html.Raw(Model.Description)</div>
+
+<h4>Tasks (@Model.TaskGroups.Count):</h4>
+<div class="list-group">
+    @if (isAdmin)
+    {
+        <a asp-controller="Course" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item list-group-item-warning"><span class="glyphicon glyphicon-pencil"></span> Edit course</a>
+        <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Add task group</a>
+    }
+    @foreach (var taskGroup in Model.TaskGroups)
+    {
+        <a asp-controller="TaskGroup" asp-action="View" asp-route-id="@taskGroup.Id" class="list-group-item">@taskGroup.Name</a>
+    }
+</div>

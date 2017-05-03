@@ -1,0 +1,29 @@
+﻿@using System.Globalization
+@model AssignmentViewModel
+
+@{
+    ViewBag.Title = "Assignment: " + Model.TaskVariant.Name;
+}
+
+<h2>Assignment: @Model.TaskVariant.Name</h2>
+
+<div class="well">@Html.Raw(Model.TaskVariant.Description)</div>
+
+<p>Status: @Model.Status @(Model.Status == ReviewStatus.Graded ? Model.Score.ToString(CultureInfo.InvariantCulture) : "")</p>
+
+<h4>Submissions:</h4>
+<form asp-controller="Assignment" asp-action="AddSubmission" Method="post" enctype="multipart/form-data" class="form-inline">
+    <div class="list-group">
+        <div class="list-group-item">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input asp-for="NewSubmissionViewModel.TaskVariantId"/>
+            <input asp-for="NewSubmissionViewModel.Files" class="form-control"/>
+            <button type="submit" class="btn btn-default">Upload submission</button>
+        </div>
+        
+        @foreach (var submission in Model.Submissions)
+        {
+            <a asp-controller="Submission" asp-action="View" asp-route-id="@submission.Id" class="list-group-item">@submission.Time</a>
+        }
+    </div>
+</form>

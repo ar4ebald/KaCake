@@ -1,0 +1,41 @@
+﻿@model KaCake.ViewModels.Assignment.ReviewViewModel
+
+@{
+    ViewBag.Title = "Review";
+}
+
+<h2>Review assignment</h2>
+<h4>Task group: @Model.TaskGroupName</h4>
+<h4>Task variant: @Model.TaskVariantName</h4>
+<h4>For user: @Model.UserName</h4>
+<hr />
+<h5>Status: <b>@Model.Status</b></h5>
+@if (Model.Status == ReviewStatus.Graded)
+{
+    <h5>Score: @Model.Score</h5>
+}
+<hr />
+<form asp-controller="Assignment" asp-action="Review" asp-route-variantId="@Model.VaraintId" asp-route-userId="@Model.UserId" Method="post" class="form-inline">
+    <div class="row">
+        <div class="form-group">
+            <label asp-for="Score" class="col-md-2 control-label"></label>
+        </div>
+        <div class="form-group">
+            <input asp-for="Score" class="form-control" />
+            <span asp-validation-for="Score" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <div class="col-md-10">
+                <button type="submit" class="btn btn-default">Set score</button>
+            </div>
+        </div>
+    </div>
+</form>
+<hr />
+<h4>Submissions:</h4>
+<div class="list-group">
+    @for (int i = 0; i < Model.Submissions.Count; i++)
+    {
+        <a asp-controller="Project" asp-action="Index" asp-route-id="@Model.Submissions[i].Id" class="list-group-item" target="_blank">Submission @(i + 1) at @Model.Submissions[i].Time</a>
+    }
+</div>

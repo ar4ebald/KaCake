@@ -1,0 +1,72 @@
+﻿@model AddAsignmentsViewModel
+
+@{
+    ViewData["Title"] = "Add assignments to variant: " + Model.TaskVariantName;
+}
+
+<h2>Add assignments to variant: @Model.TaskVariantName</h2>
+
+<form asp-controller="TaskVariant" asp-action="AddAssignments" Method="post" class="form-horizontal">
+    <div asp-validation-summary="All" class="text-danger"></div>
+
+    <input asp-for="TaskVariantId" />
+
+    <div class="form-group">
+        <label asp-for="DeadlineUtc" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <div class="input-group date" id="datetimepicker">
+                <input asp-for="DeadlineUtc" type="text" class="form-control" />
+            </div>
+        </div>
+    </div>
+
+    @*
+        bootstrap-select examples
+        https://silviomoreto.github.io/bootstrap-select/examples/
+    *@
+    
+    <div class="form-group">
+        <label asp-for="ReviewerId" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <select asp-for="ReviewerId" asp-items="@ViewBag.Reviewers" class="selectpicker" data-live-search="true"></select>
+            <span asp-validation-for="ReviewerId" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="UsersToAdd" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <select asp-for="UsersToAdd" asp-items="@ViewBag.UsersToAdd" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
+            <span asp-validation-for="UsersToAdd" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="UsersToRemove" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <select asp-for="UsersToRemove" asp-items="@ViewBag.UsersToRemove" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
+            <span asp-validation-for="UsersToRemove" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="col-md-offset-2 col-md-10">
+            <button type="submit" class="btn btn-default">Create/remove assignments</button>
+        </div>
+    </div>
+</form>
+
+@section scripts
+{
+    <script type="text/javascript">
+        $(function () {
+            $('#datetimepicker').datetimepicker({
+                locale: 'ru',
+                format: 'DD.MM.YYYY HH:mm',
+                useCurrent: true,
+                allowInputToggle: true,
+                sideBySide: true
+            });
+        });
+    </script>
+}
