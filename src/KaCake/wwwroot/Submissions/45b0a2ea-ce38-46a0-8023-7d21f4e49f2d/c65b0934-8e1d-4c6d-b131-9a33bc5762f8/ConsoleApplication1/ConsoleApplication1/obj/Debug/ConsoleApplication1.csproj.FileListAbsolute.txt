@@ -1,9 +1,0 @@
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.pdb
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.csprojResolveAssemblyReference.cache
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
-X:\2016-09-21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
-C:\Users\mister\Desktop\2016_09_21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\bin\Debug\ConsoleApplication1.exe.config
-C:\Users\mister\Desktop\2016_09_21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.exe
-C:\Users\mister\Desktop\2016_09_21_163(2)\Малин_8\ConsoleApplication1\ConsoleApplication1\obj\Debug\ConsoleApplication1.pdb
