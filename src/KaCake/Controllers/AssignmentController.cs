@@ -74,7 +74,9 @@ namespace KaCake.Controllers
                         UserName = assignment.User.FullName,
                         Score = assignment.Score,
                         Status = assignment.Status
-                    }).ToList()
+                    }).ToList(),
+                UserIsTeacher = _context.Courses.FirstOrDefault(c => c.Id == taskData.CourseId)
+                    .Teachers.Any(teacher => teacher.Id == _userManager.GetUserId(User))
             });
         }
 
@@ -186,7 +188,7 @@ namespace KaCake.Controllers
             });
         }
 
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult PendingReview()
         {
             string userId = _userManager.GetUserId(User);
@@ -208,7 +210,7 @@ namespace KaCake.Controllers
 
         [HttpGet]
         [Route("[controller]/[action]/{variantId}/{userId}")]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Review(int variantId, string userId)
         {
             var assignment = _context.Assignments.Find(variantId, userId);
@@ -243,7 +245,7 @@ namespace KaCake.Controllers
 
         [HttpPost]
         [Route("[controller]/[action]/{variantId}/{userId}")]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Review(int variantId, string userId, double Score)
         {
             var assignment = _context.Assignments.Find(variantId, userId);

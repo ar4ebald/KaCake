@@ -66,7 +66,7 @@ namespace KaCake.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Create(int id, int? taskVariantId)
         {
             TaskVariant editingTaskVariant;
@@ -87,7 +87,7 @@ namespace KaCake.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Authorize]
         public IActionResult Create(TaskVariantViewModel taskVariant)
         {
             if (ModelState.IsValid)
@@ -116,18 +116,20 @@ namespace KaCake.Controllers
             return View(taskVariant);
         }
 
-        private void PopulateAddAssignmentData(List<SelectListItem> usersToRemove)
+        private void PopulateAddAssignmentData(List<SelectListItem> usersToRemove, int courseId)
         {
             var usersToRemoveIds = new HashSet<string>(usersToRemove.Select(user => user.Value));
 
-            var roleId = _context.Roles.First(role => role.Name == RoleNames.Admin).Id;
-            ViewData["Reviewers"] = _context.Users.Where(user => user.Roles.Select(role => role.RoleId).Contains(roleId))
-                .Select(user => new SelectListItem
-                {
-                    Text = user.FullName,
-                    Value = user.Id
-                }).ToList();
-
+            Course course = _context.Courses.Where(c => c.Id == courseId).FirstOrDefault();
+            if (course != null)
+            {
+                ViewData["Reviewers"] = _context.Users.Where(user => course.Teachers.Any(teacher => teacher.Id == user.Id))
+                    .Select(user => new SelectListItem
+                    {
+                        Text = user.FullName,
+                        Value = user.Id
+                    }).ToList();
+            }
             ViewData["UsersToAdd"] = _context.Users
                 .Where(user => !usersToRemoveIds.Contains(user.Id))
                 .Select(user => new SelectListItem()
@@ -144,30 +146,33 @@ namespace KaCake.Controllers
         [Authorize(Roles = RoleNames.Admin)]
         public IActionResult AddAssignments(int id)
         {
-            var editingVariant = _context.TaskVariants
-                .Where(variant => variant.Id == id)
-                .Select(variant => new
-                {
-                    variant.Id,
-                    variant.Name,
-                    UsersToRemove =
+            var variant = _context.TaskVariants
+                .Where(v => v.Id == id)
+                .FirstOrDefault();
+
+            if (variant == null)
+                return NotFound();
+
+            var editingVariant =  new
+            {
+                variant.Id,
+                variant.Name,
+                UsersToRemove =
                     variant.Assignments.Select(assignment => new
                     {
                         assignment.User.Id,
                         Name = assignment.User.FullName
                     })
-                })
-                .FirstOrDefault();
+            };
 
-            if (editingVariant == null)
-                return NotFound();
+
 
             var usersToRemove = editingVariant.UsersToRemove.Select(user => new SelectListItem()
             {
                 Text = user.Name,
                 Value = user.Id
             }).ToList();
-            PopulateAddAssignmentData(usersToRemove);
+            PopulateAddAssignmentData(usersToRemove, variant.TaskGroup.Course.Id);
 
             return View(new AddAsignmentsViewModel()
             {
@@ -215,22 +220,26 @@ namespace KaCake.Controllers
                 }
             }
 
-            var editingVariant = _context.TaskVariants
-                .Where(variant => variant.Id == viewModel.TaskVariantId)
-                .Select(variant => variant.Assignments.Select(assignment => new
+            var variant = _context.TaskVariants
+                .Where(v => v.Id == viewModel.TaskVariantId)
+                .FirstOrDefault();
+            if(variant == null)
+            {
+                return NotFound();
+            }
+
+            var editingVariant = variant.Assignments.Select(assignment => new
                 {
                     assignment.User.Id,
                     Name = assignment.User.FullName
-                })
-                )
-                .FirstOrDefault();
+                });
 
             var usersToRemove = editingVariant.Select(user => new SelectListItem()
             {
                 Text = user.Name,
                 Value = user.Id
             }).ToList();
-            PopulateAddAssignmentData(usersToRemove);
+            PopulateAddAssignmentData(usersToRemove, variant.TaskGroup.Course.Id);
 
             return View(viewModel);
         }

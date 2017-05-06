@@ -79,7 +79,7 @@
                 }
             });
 
-            @if (User.IsInRole(RoleNames.Admin))
+            @if ( Model.UserIsTeacher)
             {
                 <text>
                     $('.table > tbody > tr').css('cursor', 'pointer');
