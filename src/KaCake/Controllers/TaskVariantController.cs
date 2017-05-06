@@ -34,23 +34,33 @@ namespace KaCake.Controllers
         {
             string userId = _userManager.GetUserId(User);
 
-            TaskVariantViewModel viewModel = _context.TaskVariants
-                .Where(taskVariant => taskVariant.Id == id)
-                .Select(taskVariant => new TaskVariantViewModel()
-                {
-                    Id = id,
-                    Name = taskVariant.Name,
-                    Description = taskVariant.Description,
-                    TaskGroupId = taskVariant.TaskGroupId,
-                    TaskGroupName = taskVariant.TaskGroup.Name,
-                    CourseId = taskVariant.TaskGroup.CourseId,
-                    CourseName = taskVariant.TaskGroup.Course.Name,
-                    AssignmentsCount = taskVariant.Assignments.Count,
-                    IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId)
-                }).FirstOrDefault();
-
-            if (viewModel == null)
+            TaskVariant taskVariant = _context.TaskVariants.Find(id);
+            if(taskVariant == null)
+            {
                 return NotFound();
+            }
+
+            TaskVariantViewModel viewModel = new TaskVariantViewModel()
+            {
+                Id = id,
+                Name = taskVariant.Name,
+                Description = taskVariant.Description,
+                TaskGroupId = taskVariant.TaskGroupId
+            };
+            if(taskVariant.TaskGroup != null)
+            {
+                viewModel.TaskGroupName = taskVariant.TaskGroup.Name;
+                viewModel.CourseId = taskVariant.TaskGroup.CourseId;
+                if(taskVariant.TaskGroup.Course != null)
+                {
+                    viewModel.CourseName = taskVariant.TaskGroup.Course.Name;
+                }
+            }
+            if(taskVariant.Assignments != null)
+            {
+                viewModel.AssignmentsCount = taskVariant.Assignments.Count;
+                viewModel.IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId);
+            }
 
             return View(viewModel);
         }
@@ -95,7 +105,7 @@ namespace KaCake.Controllers
                     {
                         TaskGroupId = taskVariant.TaskGroupId,
                         Name = taskVariant.Name,
-                        Description = taskVariant.Description,
+                        Description = taskVariant.Description
                     });
                     _context.SaveChanges();
                     taskVariant.Id = entity.Entity.Id;

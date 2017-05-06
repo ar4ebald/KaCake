@@ -16,7 +16,7 @@ namespace KaCake.Controllers
 {
     public class ProjectController : Controller
     {
-        private const string CommentsFileExtension = ".zhoporeshet.json";
+        private const string CommentsFileExtension = ".kacakecomments.json";
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -98,6 +98,44 @@ namespace KaCake.Controllers
             {
                 Text = System.IO.File.ReadAllText(path)
             });
+        }
+
+        [Authorize]
+        public IActionResult GetAllComments(int id)
+        {
+            var submissions = _context.Submissions
+                .Where(submission => submission.Id == id);
+
+            if (!User.IsInRole(RoleNames.Admin))
+            {
+                string userId = _userManager.GetUserId(User);
+                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+            }
+
+            string root = submissions
+                .Select(submission => submission.Path)
+                .FirstOrDefault();
+
+            if(root == null)
+            {
+                return NotFound();
+            }
+
+            if(!System.IO.Directory.Exists(root))
+            {
+                return NotFound();
+            }
+
+            string[] commentsFiles = Directory.GetFiles(root, "*" + CommentsFileExtension, SearchOption.AllDirectories);
+            List<object> commentsList = new List<object>();
+            foreach(string file in commentsFiles)
+            {
+                string comments = System.IO.File.ReadAllText(file);
+                var jarr = Newtonsoft.Json.Linq.JArray.Parse(comments);
+                commentsList.AddRange(jarr);
+            }
+            
+            return Json(commentsList);
         }
 
         [Authorize(Roles = RoleNames.Admin)]

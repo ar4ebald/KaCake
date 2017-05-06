@@ -48,19 +48,51 @@
 
 <h2>@Model.TaskGroupName / @Model.TaskVariantName / @Model.UserName (@Model.SubmissionTime)</h2>
 <div id="tree"></div>
+<div id="list"></div>
+<div class="container">
+    <button type="submit" id="save_comments" class="btn btn-default collapse">Save</button>
+</div>
 
 <div class="navbar-fixed-bottom transpanent-div collapse" id="comment_footer">
     <div class="container">
         <div class="row">
             <form>
                 <div class="form-group">
-                    <label for="comment">Edit your comment</label>
-                    <textarea id="comment" rows="5"></textarea>
+                    @if (User.IsInRole(RoleNames.Admin))
+                    {
+                        <text>
+                            <label for="comment">Edit your comment</label>
+                        </text>
+                    }
+                    else
+                    {
+                        <text>
+                            <label for="comment">View your comment</label>
+                        </text>
+                    }
+                    <textarea id="comment" rows="5"
+                              @if (!User.IsInRole(RoleNames.Admin)){
+                              <text>disabled</text>
+                              }
+                              ></textarea>
                 </div>
-                <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
-                <button type="reset" id="remove_comment" class="btn btn-default">Remove comment</button>
-                <button type="reset" id="cancel_comment" class="btn btn-default">Cancel</button>
+                @if (User.IsInRole(RoleNames.Admin))
+                {
+                <text>
+                    <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
+                    <button type="reset" id="remove_comment" class="btn btn-default">Remove comment</button>
+                    <button type="reset" id="cancel_comment" class="btn btn-default">Cancel</button>
+                </text>
+                }
             </form>
+        </div>
+    </div>
+</div>
+
+<div class="navbar-fixed-top alert-success collapse" id="comment_submitted_footer">
+    <div class="container">
+        <div class="block-message">
+            All your comments are saved.
         </div>
     </div>
 </div>
@@ -89,6 +121,13 @@
 
         var modelist = ace.require("ace/ext/modelist");
         var editors = {};
+        var tabs = {};
+        var comment = null;
+        var commentsList = [];
+
+        var savedVal = "Save";
+        var needToSaveVal = "Save *";
+
         var editor;
 
         function writeOutput(text) {
@@ -157,19 +196,34 @@
             @if (User.IsInRole(RoleNames.Admin))
             {
                 <text>
-                    editor.commands.addCommand({
-                        name: "save",
-                        bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
-                        exec: function(editor) {
-                            $.get("../SaveComments/@Model.SubmissionId?file=" +
+            function save(editor) {
+                $.get("../SaveComments/@Model.SubmissionId?file=" +
                                 encodeURI(editor.file) +
                                 "&commentsJson=" +
                                 encodeURI(JSON.stringify(editor.getSession().getComments())),
                                 function(result) {
                                     console.log(result);
+                                    $('#comment_submitted_footer').collapse("show");
+                                    $('#save_comments').text(savedVal);
+                                    setTimeout(function () {
+                                        $('#comment_submitted_footer').collapse("hide");
+                                    }, 3000);
                                 });
+            };
+                    editor.commands.addCommand({
+                        name: "save",
+                        bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
+                        exec: function (editor) {
+                            save(editor);
                         }
+            });
+
+                    $('body').on("click", '#save_comments', function (e) {
+                        save(editor);
                     });
+
+                    $('#save_comments').collapse("show");
+
                 </text>
             }
 
@@ -184,11 +238,9 @@
                 return uuid;
             };
 
-            var comment = null;
-
             $('body').on('click',
                 '#submit_comment',
-                function(e) {
+                function (e) {
                     e.preventDefault();
 
                     if (comment) {
@@ -209,8 +261,12 @@
                     comment.endRow = selectionRange.end.row;
                     comment.endPosition = selectionRange.end.column;
                     comment.text = new String($("#comment").val());
+                    comment.file = editor.file;
 
                     comment.uuid = generateUUID();
+
+                    addToCommentsList(comment);
+                    updateComments();
 
                     editor.getSession().addComment(comment);
 
@@ -221,12 +277,19 @@
 
                     comment = null;
                     $('#comment').val("");
+                    
+                    $('#save_comments').text(needToSaveVal);
                 });
-
             $('body').on('click',
                 '#remove_comment',
                 function(e) {
                     e.preventDefault();
+
+                    if (!comment) {
+                        return;
+                    }
+
+                    var uuid = comment.uuid;
                     editor.getSession().removeComment(comment);
                     editor.setValue(editor.getValue());
                     editor.getSelection().clearSelection();
@@ -234,6 +297,15 @@
                     $('#comment_footer').collapse("hide");
                     comment = null;
                     $('#comment').val("");
+
+                    for (var i = 0; i < commentsList.length; ++i) {
+                        if (commentsList[i].comment.uuid == uuid) {
+                            commentsList.splice(i, 1);
+                            break;
+                        }
+                    }
+                    updateComments();
+                    $('#save_comments').text(needToSaveVal);
                 });
 
             editor.getSession().selection.on('changeSelection',
@@ -285,6 +357,7 @@
                         repl = null;
                     }
                     e.preventDefault();
+                    console.log($(this));
                     $(this).tab('show');
                 })
             .on("click",
@@ -292,12 +365,18 @@
                 function() {
                     var anchor = $(this).siblings('a');
 
-                    editor = ace.edit("editor_" + (anchor.attr('href').substr("#tab_".length)));
+                    var id = anchor.attr('href').substr("#tab_".length);
+                    editor = ace.edit("editor_" + id);
                     editor.destroy();
 
                     $(anchor.attr('href')).remove();
                     $(this).parent().remove();
                     $(".nav-tabs li").children('a').first().click();
+                    delete tabs[id];
+
+                    if ($(".nav-tabs").children().length == 0) {
+                        $('#save_comments').collapse("hide");
+                    }
                 });
 
         function createTab(name, data) {
@@ -313,6 +392,7 @@
                 id +
                 '"></div></div>');
 
+            console.log(data.text);
             var editor = setupEditor("editor_" + id, name);
             editor.setValue(data.text);
             if (data.comments) {
@@ -323,6 +403,7 @@
                 }
             }
             editors[id] = editor;
+            tabs[id] = name;
 
             $('.nav-tabs li').children('a').last().click();
 
@@ -331,15 +412,73 @@
             $('#comment_footer').collapse("hide");
         }
 
+        function goToTab(filename, file) {
+            var a = $(".nav-tabs li").children('a');
+            for (var i = 0; i < a.length; ++i) {
+                console.log(a[i]);
+                var id = $(a[i]).attr('href').substr("#tab_".length);
+                if (tabs[id] == filename) {
+                    $(a[i]).click();
+                    editor = editors[id];
+                    return;
+                }
+            }
+
+            createTab(filename, file);
+        }
+
+        function updateComments() {
+            console.log("Updating list");
+            $('#list').empty();
+                    $('#list').treeview({
+                    data: commentsList,
+                    onNodeSelected: function (event, data) {
+                        $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.comment.file),
+                            function (result) {
+                                goToTab(data.comment.file, result);
+                                var comment_uuid = data.comment.uuid;
+                                comment = editor.getSession().getComment(comment_uuid);
+                                $('#comment').val(new String(comment.text));
+                                $('#comment_footer').collapse("show");
+                                $('#remove_comment').show();
+                            }
+                        );
+                    }
+                });
+
+        }
+
+        function addToCommentsList(c) {
+            var cmnt = {
+                text: c.text.length > 80 ? c.text.substr(0, 80) + "..." : c.text,
+                icon: "glyphicon glyphicon-comment",
+                backColor: "#b4b3a2",
+                comment: c
+            }
+            commentsList.push(cmnt);
+        }
+
         $('#tree').treeview({
             data: tree,
-            onNodeSelected: function(event, data) {
+            onNodeSelected: function (event, data) {
                 $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file),
-                    function(result) {
-                        createTab(data.file, result);
+                    function (result) {
+                        goToTab(data.file, result);
                     }
                 );
             }
         });
+
+        $.get("../GetAllComments/@Model.SubmissionId",
+            function (result) {
+                for (var i = 0; i < result.length; ++i) {
+                    var c = result[i];
+                    addToCommentsList(c);
+                }
+
+                updateComments();
+            }
+        );
+
     </script>
 }
