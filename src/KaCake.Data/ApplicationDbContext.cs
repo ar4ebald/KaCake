@@ -20,7 +20,7 @@ namespace KaCake.Data
 
         public ApplicationDbContext()
             : base(new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseSqlServer("Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=KaCakeDatabase;Integrated Security=True")
+                .UseSqlServer("Server=tcp:kacakedataserver.database.windows.net,1433;Initial Catalog=KaCake_db;Persist Security Info=False;User ID=KaCakeAdmin;Password=KaCakePassword123456;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;")
                 .Options)
         {
 
