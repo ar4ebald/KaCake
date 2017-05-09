@@ -6,8 +6,11 @@
 
 <h2>All courses list (@Model.Courses.Count)</h2>
 <div class="list-group">
-    <a asp-controller="Course" asp-action="Create" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Create course</a>
-    
+    @if (User.IsInRole(RoleNames.Admin))
+    {
+        <a asp-controller="Course" asp-action="Create" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Create course</a>
+    }
+
     @foreach (var course in Model.Courses)
     {
         <a asp-controller="Course" asp-action="View" asp-route-id="@course.Id" class="list-group-item">@course.Name</a>

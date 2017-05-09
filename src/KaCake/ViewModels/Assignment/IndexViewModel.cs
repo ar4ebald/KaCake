@@ -17,7 +17,5 @@ namespace KaCake.ViewModels.Assignment
         public int TaskVariantId { get; set; }
         public string TaskVariantName { get; set; }
         public List<AssignmentViewModel> Assignments { get; set; }
-
-        public bool UserIsTeacher { get; set; }
     }
 }

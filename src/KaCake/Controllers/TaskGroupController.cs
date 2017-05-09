@@ -11,23 +11,20 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Assignment;
 using KaCake.ViewModels.TaskVariant;
-using Microsoft.AspNetCore.Identity;
 
 namespace KaCake.Controllers
 {
     public class TaskGroupController : Controller
     {
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly ApplicationDbContext _context;
 
-        public TaskGroupController(UserManager<ApplicationUser> userManager, ApplicationDbContext context)
+        public TaskGroupController(ApplicationDbContext context)
         {
-            _userManager = userManager;
             _context = context;
         }
 
         [HttpGet]
-        [Authorize]
+        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int id, int? taskGroupId)
         {
             TaskGroup editingGroup;
@@ -38,9 +35,7 @@ namespace KaCake.Controllers
                     CourseId = id,
                     Id = taskGroupId.Value,
                     Name = editingGroup.Name,
-                    Description = editingGroup.Description,
-                    UserIsTeacher = editingGroup.Course
-                        .Teachers.Any(teacher => teacher.Id == _userManager.GetUserId(User))
+                    Description = editingGroup.Description
                 });
             }
 
@@ -51,7 +46,7 @@ namespace KaCake.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(TaskGroupViewModel taskGroup)
         {
             if (ModelState.IsValid)

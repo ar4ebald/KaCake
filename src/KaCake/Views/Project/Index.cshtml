@@ -58,7 +58,7 @@
         <div class="row">
             <form>
                 <div class="form-group">
-                    @if (Model.UserIsTeacher)
+                    @if (User.IsInRole(RoleNames.Admin))
                     {
                         <text>
                             <label for="comment">Edit your comment</label>
@@ -71,12 +71,12 @@
                         </text>
                     }
                     <textarea id="comment" rows="5"
-                              @if (!Model.UserIsTeacher){
+                              @if (!User.IsInRole(RoleNames.Admin)){
                               <text>disabled</text>
                               }
                               ></textarea>
                 </div>
-                @if (Model.UserIsTeacher)
+                @if (User.IsInRole(RoleNames.Admin))
                 {
                 <text>
                     <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
@@ -193,7 +193,7 @@
                     }
                 }
             });
-            @if (Model.UserIsTeacher)
+            @if (User.IsInRole(RoleNames.Admin))
             {
                 <text>
             function save(editor) {

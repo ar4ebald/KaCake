@@ -17,11 +17,5 @@ namespace KaCake.ViewModels.Course
         public string Name { get; set; }
 
         public string Description { get; set; }
-
-        [Display(Name = "Users to add")]
-        public IEnumerable<string> UsersToAdd { get; set; }
-
-        [Display(Name = "Users to remove")]
-        public IEnumerable<string> UsersToRemove { get; set; }
     }
 }

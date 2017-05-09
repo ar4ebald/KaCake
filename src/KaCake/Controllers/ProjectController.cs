@@ -33,9 +33,11 @@ namespace KaCake.Controllers
             var submissions = _context.Submissions
                 .Where(submission => submission.Id == id);
 
-
-            string userId = _userManager.GetUserId(User);
-            submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+            if (!User.IsInRole(RoleNames.Admin))
+            {
+                string userId = _userManager.GetUserId(User);
+                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+            }
 
             var viewModel = submissions
                 .Select(submission => new
@@ -47,9 +49,7 @@ namespace KaCake.Controllers
                         TaskGroupName = submission.Assignment.TaskVariant.TaskGroup.Name,
                         TaskVariantName = submission.Assignment.TaskVariant.Name,
                         SubmissionTime = submission.Time,
-                        SubmissionId = submission.Id,
-                        UserIsTeacher = submission.Assignment.TaskVariant.TaskGroup.Course
-                            .Teachers.Any(teacher => teacher.Id == _userManager.GetUserId(User))
+                        SubmissionId = submission.Id
                     }
                 }).FirstOrDefault();
 
@@ -67,9 +67,9 @@ namespace KaCake.Controllers
             var submissions = _context.Submissions
                 .Where(submission => submission.Id == id);
 
-            string userId = _userManager.GetUserId(User);
-            if (submissions.Any(s => s.Assignment.TaskVariant.TaskGroup.Course.Teachers.Any(t => t.Id.Equals(userId))))
+            if (!User.IsInRole(RoleNames.Admin))
             {
+                string userId = _userManager.GetUserId(User);
                 submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
             }
 
@@ -106,9 +106,9 @@ namespace KaCake.Controllers
             var submissions = _context.Submissions
                 .Where(submission => submission.Id == id);
 
-            string userId = _userManager.GetUserId(User);
-            if (submissions.Any(s => s.Assignment.TaskVariant.TaskGroup.Course.Teachers.Any(t => t.Id.Equals(userId))))
+            if (!User.IsInRole(RoleNames.Admin))
             {
+                string userId = _userManager.GetUserId(User);
                 submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
             }
 
@@ -138,7 +138,7 @@ namespace KaCake.Controllers
             return Json(commentsList);
         }
 
-        [Authorize]
+        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult SaveComments(int id, string file, string commentsJson)
         {
             string root = _context.Submissions

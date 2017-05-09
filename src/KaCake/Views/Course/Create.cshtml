@@ -27,21 +27,6 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="UsersToAdd" class="col-md-2 control-label"></label>
-        <div class="col-md-10">
-            <select asp-for="UsersToAdd" asp-items="@ViewBag.UsersToAdd" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
-            <span asp-validation-for="UsersToAdd" class="text-danger"></span>
-        </div>
-    </div>
-    <div class="form-group">
-        <label asp-for="UsersToRemove" class="col-md-2 control-label"></label>
-        <div class="col-md-10">
-            <select asp-for="UsersToRemove" asp-items="@ViewBag.UsersToRemove" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
-            <span asp-validation-for="UsersToRemove" class="text-danger"></span>
-        </div>
-    </div>
-
-    <div class="form-group">
         <div class="col-md-offset-2 col-md-10">
             <button type="submit" class="btn btn-default">Create</button>
         </div>

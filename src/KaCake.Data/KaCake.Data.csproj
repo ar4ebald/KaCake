@@ -5,6 +5,58 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ApplicationDbContext.cs" />
+    <None Remove="Migrations\00000000000000_CreateIdentitySchema.cs" />
+    <None Remove="Migrations\00000000000000_CreateIdentitySchema.Designer.cs" />
+    <None Remove="Migrations\20161221011717_Courses.cs" />
+    <None Remove="Migrations\20161221011717_Courses.Designer.cs" />
+    <None Remove="Migrations\20161222233237_AddedDeadline.cs" />
+    <None Remove="Migrations\20161222233237_AddedDeadline.Designer.cs" />
+    <None Remove="Migrations\20161224151542_AddReviewersToAssignment.cs" />
+    <None Remove="Migrations\20161224151542_AddReviewersToAssignment.Designer.cs" />
+    <None Remove="Migrations\20161224151919_AddReviewStatusToAssignment.cs" />
+    <None Remove="Migrations\20161224151919_AddReviewStatusToAssignment.Designer.cs" />
+    <None Remove="Migrations\20161226001607_AddNameToUsers.cs" />
+    <None Remove="Migrations\20161226001607_AddNameToUsers.Designer.cs" />
+    <None Remove="Migrations\20170502200256_Initial.cs" />
+    <None Remove="Migrations\20170502200256_Initial.Designer.cs" />
+    <None Remove="Migrations\ApplicationDbContextModelSnapshot.cs" />
+    <None Remove="Models\ApplicationUser.cs" />
+    <None Remove="Models\Assignment.cs" />
+    <None Remove="Models\Course.cs" />
+    <None Remove="Models\CourseEnrollment.cs" />
+    <None Remove="Models\Submission.cs" />
+    <None Remove="Models\TaskGroup.cs" />
+    <None Remove="Models\TaskVariant.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="ApplicationDbContext.cs" />
+    <Compile Include="Migrations\00000000000000_CreateIdentitySchema.cs" />
+    <Compile Include="Migrations\00000000000000_CreateIdentitySchema.Designer.cs" />
+    <Compile Include="Migrations\20161221011717_Courses.cs" />
+    <Compile Include="Migrations\20161221011717_Courses.Designer.cs" />
+    <Compile Include="Migrations\20161222233237_AddedDeadline.cs" />
+    <Compile Include="Migrations\20161222233237_AddedDeadline.Designer.cs" />
+    <Compile Include="Migrations\20161224151542_AddReviewersToAssignment.cs" />
+    <Compile Include="Migrations\20161224151542_AddReviewersToAssignment.Designer.cs" />
+    <Compile Include="Migrations\20161224151919_AddReviewStatusToAssignment.cs" />
+    <Compile Include="Migrations\20161224151919_AddReviewStatusToAssignment.Designer.cs" />
+    <Compile Include="Migrations\20161226001607_AddNameToUsers.cs" />
+    <Compile Include="Migrations\20161226001607_AddNameToUsers.Designer.cs" />
+    <Compile Include="Migrations\20170502200256_Initial.cs" />
+    <Compile Include="Migrations\20170502200256_Initial.Designer.cs" />
+    <Compile Include="Migrations\ApplicationDbContextModelSnapshot.cs" />
+    <Compile Include="Models\ApplicationUser.cs" />
+    <Compile Include="Models\Assignment.cs" />
+    <Compile Include="Models\Course.cs" />
+    <Compile Include="Models\CourseEnrollment.cs" />
+    <Compile Include="Models\Submission.cs" />
+    <Compile Include="Models\TaskGroup.cs" />
+    <Compile Include="Models\TaskVariant.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="1.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="1.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="1.1.1" />

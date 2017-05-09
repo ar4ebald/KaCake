@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "View";
-    bool isAdmin = Model.UserIsTeacher;
+    bool isAdmin = User.IsInRole(RoleNames.Admin);
 }
 
 <h2>@Model.Name</h2>
