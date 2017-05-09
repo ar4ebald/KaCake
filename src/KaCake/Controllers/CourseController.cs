@@ -11,6 +11,9 @@ using KaCake.Data.Models;
 using KaCake.ViewModels.Assignment;
 using KaCake.ViewModels.Course;
 using IndexViewModel = KaCake.ViewModels.Course.IndexViewModel;
+using KaCake.Utils;
+using KaCake.ViewModels.UserInfo;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -42,6 +45,7 @@ namespace KaCake.Controllers
         {
             var viewingCourse = _context.Courses
                 .Include(course => course.TaskGroups)
+                .Include(course => course.Teachers)
                 .FirstOrDefault(course => course.Id == id);
 
             if (viewingCourse == null)
@@ -56,7 +60,10 @@ namespace KaCake.Controllers
                 {
                     Id = taskGroup.Id,
                     Name = taskGroup.Name
-                }).ToList()
+                }).ToList(),
+                Teachers = viewingCourse.Teachers.Select(
+                    teacher => KaCakeUtils.createUserInfoViewModel(_context, teacher.TeacherId))
+                    .ToList()
             });
         }
 
@@ -64,9 +71,27 @@ namespace KaCake.Controllers
         [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int? id)
         {
-            Course editingCourse;
-            if (id.HasValue && (editingCourse = _context.Courses.Find(id.Value)) != null)
+            var teachersToAdd = _context.Users.Select(user =>
+            new SelectListItem
             {
+                Text = user.FullName,
+                Value = user.Id
+            }).ToList();
+
+            Course editingCourse;
+            if (id.HasValue && (editingCourse = 
+                    _context.Courses.Include(c => c.Teachers)
+                        .FirstOrDefault(c => c.Id == id.Value)) != null)
+            {
+                teachersToAdd.RemoveAll(t => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Value)));
+
+                ViewData["TeachersToAdd"] = teachersToAdd;
+                ViewData["TeachersToRemove"] = editingCourse.Teachers.Select(teacher => new SelectListItem
+                {
+                    Text = teacher.Teacher.FullName,
+                    Value = teacher.TeacherId
+                });
+
                 return View(new CreateViewModel()
                 {
                     Id = id.GetValueOrDefault(),
@@ -74,7 +99,12 @@ namespace KaCake.Controllers
                     Description = editingCourse.Description
                 });
             }
-            return View();
+            else
+            {
+                ViewData["TeachersToAdd"] = teachersToAdd;
+                ViewData["TeachersToRemove"] = new List<SelectListItem>();
+                return View();
+            }
         }
 
         [HttpPost]
@@ -84,10 +114,31 @@ namespace KaCake.Controllers
             if (ModelState.IsValid)
             {
                 Course editingCourse;
-                if (course.Id.HasValue && (editingCourse = _context.Courses.Find(course.Id)) != null)
+                if (course.Id.HasValue && (editingCourse =
+                    _context.Courses.Include(c => c.Teachers)
+                        .FirstOrDefault(c => c.Id == course.Id.Value)) != null)
                 {
                     editingCourse.Name = course.Name;
                     editingCourse.Description = course.Description;
+
+                    if (course.TeachersToAdd != null)
+                    {
+                        course.TeachersToAdd.Select(
+                            teacherId => new CourseTeacher
+                            {
+                                CourseId = course.Id.GetValueOrDefault(),
+                                TeacherId = teacherId
+                            }
+                        ).ToList().ForEach(teacher => editingCourse.Teachers.Add(teacher));
+                    }
+
+                    if (course.TeachersToRemove != null)
+                    {
+                        course.TeachersToRemove
+                            .Where(userId => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(userId)))
+                            .Select(teacherId => editingCourse.Teachers.First(teacher => teacher.TeacherId.Equals(teacherId)))
+                            .ToList().ForEach(teacher => editingCourse.Teachers.Remove(teacher));
+                    }
                 }
                 else
                 {

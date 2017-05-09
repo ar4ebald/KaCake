@@ -11,7 +11,7 @@ namespace KaCake.Data
         public DbSet<TaskVariant> TaskVariants { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
         public DbSet<Submission> Submissions { get; set; }
-
+        
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
@@ -79,6 +79,9 @@ namespace KaCake.Data
                 .HasMany(assignment => assignment.Submissions)
                 .WithOne(submission => submission.Assignment)
                 .IsRequired();
+
+            builder.Entity<CourseTeacher>()
+                .HasKey(courseTeacher => new { courseTeacher.CourseId, courseTeacher.TeacherId });
         }
     }
 }

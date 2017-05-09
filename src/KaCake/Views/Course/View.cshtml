@@ -9,6 +9,14 @@
 
 <div class="well">@Html.Raw(Model.Description)</div>
 
+<h4>Teachers (@Model.Teachers.Count):</h4>
+<div class="list-group">
+    @foreach (var teacher in Model.Teachers)
+    {
+        <p class="list-group-item">@teacher.FullName</p>
+    }
+</div>
+
 <h4>Tasks (@Model.TaskGroups.Count):</h4>
 <div class="list-group">
     @if (isAdmin)

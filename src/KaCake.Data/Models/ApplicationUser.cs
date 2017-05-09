@@ -13,5 +13,7 @@ namespace KaCake.Data.Models
 
         public ICollection<CourseEnrollment> Courses { get; set; }
         public ICollection<Assignment> Assignments { get; set; }
+
+        public ICollection<CourseTeacher> TeachingCourses { get; set; }
     }
 }
