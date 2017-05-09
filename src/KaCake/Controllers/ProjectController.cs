@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Project;
+using KaCake.Utils;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -30,14 +31,11 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult Index(int id)
         {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
+            string userId = _userManager.GetUserId(User);
 
-            if (!User.IsInRole(RoleNames.Admin))
-            {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
-            }
+            var submissions = _context.Submissions
+                .Where(submission => submission.Id == id 
+                && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
 
             var viewModel = submissions
                 .Select(submission => new
@@ -49,7 +47,8 @@ namespace KaCake.Controllers
                         TaskGroupName = submission.Assignment.TaskVariant.TaskGroup.Name,
                         TaskVariantName = submission.Assignment.TaskVariant.Name,
                         SubmissionTime = submission.Time,
-                        SubmissionId = submission.Id
+                        SubmissionId = submission.Id,
+                        IsCourseTeacher = KaCakeUtils.IsCourseTeacher(_context, submission.Assignment.TaskVariant.TaskGroup.CourseId, userId)
                     }
                 }).FirstOrDefault();
 
@@ -64,14 +63,11 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult GetFile(int id, [FromQuery]string file)
         {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
+            string userId = _userManager.GetUserId(User);
 
-            if (!User.IsInRole(RoleNames.Admin))
-            {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
-            }
+            var submissions = _context.Submissions
+                 .Where(submission => submission.Id == id
+                    && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
 
             string root = submissions
                 .Select(submission => submission.Path)
@@ -103,14 +99,11 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult GetAllComments(int id)
         {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
+            string userId = _userManager.GetUserId(User);
 
-            if (!User.IsInRole(RoleNames.Admin))
-            {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
-            }
+            var submissions = _context.Submissions
+                 .Where(submission => submission.Id == id
+                    && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
 
             string root = submissions
                 .Select(submission => submission.Path)
@@ -137,14 +130,18 @@ namespace KaCake.Controllers
             
             return Json(commentsList);
         }
-
-        [Authorize(Roles = RoleNames.Admin)]
+        
         public IActionResult SaveComments(int id, string file, string commentsJson)
         {
-            string root = _context.Submissions
-                .Where(submission => submission.Id == id)
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
+            string userId = _userManager.GetUserId(HttpContext.User);
+            var submission = _context.Submissions.Find(id);
+
+            if(!KaCakeUtils.IsCourseTeacher(_context, submission.Assignment.TaskVariant.TaskGroup.CourseId, userId))
+            {
+                return Challenge();
+            }
+
+            string root = submission.Path;
 
             if (root == null || file == null || commentsJson == null)
                 return NotFound();

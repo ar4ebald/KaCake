@@ -4,7 +4,6 @@
 
 @{
     ViewData["Title"] = Model.Name + " - TaskGroup";
-    var isAdmin = User.IsInRole(RoleNames.Admin);
 }
 
 <h2><a asp-controller="Course" asp-action="View" asp-route-id="@Model.CourseId">@Model.CourseName</a> / @Model.Name</h2>
@@ -13,7 +12,7 @@
 
 <h4>Variants (@Model.Variants.Count):</h4>
 <div class="list-group">
-    @if (isAdmin)
+    @if (Model.IsCourseTeacher)
     {
         <a asp-controller="TaskGroup" asp-action="Create" asp-route-id="@Model.CourseId" asp-route-taskGroupId="@Model.Id" class="list-group-item list-group-item-warning"><span class="glyphicon glyphicon-pencil"></span> Edit TaskGroup</a>
         <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.Id" class="list-group-item active"><span class="glyphicon glyphicon-plus"></span> Create new variant</a>

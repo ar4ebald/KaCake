@@ -28,7 +28,7 @@ namespace KaCake.Utils
                 .ToList();
         }
 
-        public static bool isCourseTeacher(ApplicationDbContext context, string courseId, string userId)
+        public static bool IsCourseTeacher(ApplicationDbContext context, int courseId, string userId)
         {
             Course course = context.Courses.Find(courseId);
 

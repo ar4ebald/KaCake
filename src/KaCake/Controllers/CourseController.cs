@@ -33,19 +33,25 @@ namespace KaCake.Controllers
 
         public IActionResult Index()
         {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
             return View(new ViewModels.Course.IndexViewModel()
             {
-                Courses = _context.Courses.Select(course => new CourseViewModel()
-                {
-                    Id = course.Id,
-                    Name = course.Name,
-                }).ToList()
+                Courses = _context.Courses
+                    .Select(course => new CourseViewModel()
+                    {
+                        Id = course.Id,
+                        Name = course.Name
+                    })
+                    .ToList()
             });
         }
 
         [HttpGet]
         public IActionResult View(int id)
         {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
             var viewingCourse = _context.Courses
                 .Include(course => course.TaskGroups)
                 .Include(course => course.Teachers)
@@ -66,12 +72,12 @@ namespace KaCake.Controllers
                 }).ToList(),
                 Teachers = viewingCourse.Teachers.Select(
                     teacher => KaCakeUtils.createUserInfoViewModel(_context, teacher.TeacherId))
-                    .ToList()
+                    .ToList(),
+                IsUserATeacher = viewingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId)
             });
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int? id)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
@@ -84,27 +90,36 @@ namespace KaCake.Controllers
             }).ToList();
 
             Course editingCourse;
-            if (id.HasValue && (editingCourse = 
+            if (id.HasValue 
+                && (editingCourse = 
                     _context.Courses.Include(c => c.Teachers)
                         .FirstOrDefault(c => c.Id == id.Value)) != null)
             {
-                teachersToAdd.RemoveAll(t => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Value)));
-
-                ViewData["TeachersToAdd"] = teachersToAdd;
-                ViewData["TeachersToRemove"] = editingCourse.Teachers
-                    .Where(teacher => KaCakeUtils.isAppointer(editingCourse, callerId, teacher))
-                    .Select(teacher => new SelectListItem
-                    {
-                        Text = teacher.Teacher.FullName,
-                        Value = teacher.TeacherId
-                    });
-
-                return View(new CreateViewModel()
+                // Only teachers could edit course
+                if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
                 {
-                    Id = id.GetValueOrDefault(),
-                    Name = editingCourse.Name,
-                    Description = editingCourse.Description
-                });
+                    teachersToAdd.RemoveAll(t => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Value)));
+
+                    ViewData["TeachersToAdd"] = teachersToAdd;
+                    ViewData["TeachersToRemove"] = editingCourse.Teachers
+                        .Where(teacher => KaCakeUtils.isAppointer(editingCourse, callerId, teacher))
+                        .Select(teacher => new SelectListItem
+                        {
+                            Text = _context.Users.Find(teacher.TeacherId).FullName,
+                            Value = teacher.TeacherId
+                        });
+
+                    return View(new CreateViewModel()
+                    {
+                        Id = id.GetValueOrDefault(),
+                        Name = editingCourse.Name,
+                        Description = editingCourse.Description
+                    });
+                }
+                else
+                {
+                    return Forbid();
+                }
             }
             else
             {
@@ -115,7 +130,6 @@ namespace KaCake.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(CreateViewModel course)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
@@ -128,7 +142,7 @@ namespace KaCake.Controllers
                         .FirstOrDefault(c => c.Id == course.Id.Value)) != null)
                 {
                     // The course could be edited only by a teacher of that course
-                    if (editingCourse.Teachers.Any(teacher => callerId.Equals(teacher.AppointerId)))
+                    if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
                     {
                         editingCourse.Name = course.Name;
                         editingCourse.Description = course.Description;

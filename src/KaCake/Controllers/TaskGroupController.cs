@@ -11,22 +11,31 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Assignment;
 using KaCake.ViewModels.TaskVariant;
+using KaCake.Utils;
+using Microsoft.AspNetCore.Identity;
 
 namespace KaCake.Controllers
 {
     public class TaskGroupController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public TaskGroupController(ApplicationDbContext context)
+        public TaskGroupController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int id, int? taskGroupId)
         {
+            bool isCourseTeacher = KaCakeUtils.IsCourseTeacher(_context, id, _userManager.GetUserId(HttpContext.User));
+            if(!isCourseTeacher)
+            {
+                return Challenge();
+            }
+
             TaskGroup editingGroup;
             if (taskGroupId.HasValue && (editingGroup = _context.TaskGroups.Find(taskGroupId.Value)) != null)
             {
@@ -35,18 +44,19 @@ namespace KaCake.Controllers
                     CourseId = id,
                     Id = taskGroupId.Value,
                     Name = editingGroup.Name,
-                    Description = editingGroup.Description
+                    Description = editingGroup.Description,
+                    IsCourseTeacher = isCourseTeacher
                 });
             }
 
             return View(new TaskGroupViewModel()
             {
-                CourseId = id
+                CourseId = id,
+                IsCourseTeacher = isCourseTeacher
             });
         }
 
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(TaskGroupViewModel taskGroup)
         {
             if (ModelState.IsValid)
@@ -54,12 +64,22 @@ namespace KaCake.Controllers
                 TaskGroup editedTaskGroup;
                 if ((editedTaskGroup = _context.TaskGroups.Find(taskGroup.Id)) != null)
                 {
+                    if (!KaCakeUtils.IsCourseTeacher(_context, editedTaskGroup.CourseId, _userManager.GetUserId(HttpContext.User)))
+                    {
+                        return Challenge();
+                    }
+
                     editedTaskGroup.Name = taskGroup.Name;
                     editedTaskGroup.Description = taskGroup.Description;
                     _context.SaveChanges();
                 }
                 else
                 {
+                    if (!KaCakeUtils.IsCourseTeacher(_context, taskGroup.CourseId, _userManager.GetUserId(HttpContext.User)))
+                    {
+                        return Challenge();
+                    }
+
                     var entry = _context.TaskGroups.Add(new TaskGroup()
                     {
                         CourseId = taskGroup.CourseId,
@@ -93,7 +113,8 @@ namespace KaCake.Controllers
                         Id = variant.Id,
                         Name = variant.Name,
                         Description = variant.Description
-                    }).ToList()
+                    }).ToList(),
+                    IsCourseTeacher = KaCakeUtils.IsCourseTeacher(_context, taskGroup.CourseId, _userManager.GetUserId(HttpContext.User))
                 })
                 .FirstOrDefault();
 
