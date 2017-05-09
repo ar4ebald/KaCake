@@ -80,8 +80,23 @@ namespace KaCake.Data
                 .WithOne(submission => submission.Assignment)
                 .IsRequired();
 
-            builder.Entity<CourseTeacher>()
+            // Course teacher key definition
+            builder.Entity<CourseTeacher2>()
                 .HasKey(courseTeacher => new { courseTeacher.CourseId, courseTeacher.TeacherId });
+
+            // Course to CourseTeacher as one-to-many
+            builder.Entity<Course>()
+                .HasMany(course => course.Teachers)
+                .WithOne(teacher => teacher.Course)
+                .HasForeignKey(teacher => teacher.CourseId)
+                .IsRequired();
+
+            // ApplicationUser to CourseTeacher as one-to-many relation
+            builder.Entity<ApplicationUser>()
+                .HasMany(user => user.TeachingCourses)
+                .WithOne(teacher => teacher.Teacher)
+                .HasForeignKey(teacher => teacher.TeacherId)
+                .IsRequired();
         }
     }
 }

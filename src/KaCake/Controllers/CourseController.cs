@@ -14,6 +14,7 @@ using IndexViewModel = KaCake.ViewModels.Course.IndexViewModel;
 using KaCake.Utils;
 using KaCake.ViewModels.UserInfo;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Identity;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -22,10 +23,12 @@ namespace KaCake.Controllers
     public class CourseController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public CourseController(ApplicationDbContext context)
+        public CourseController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
         public IActionResult Index()
@@ -71,6 +74,8 @@ namespace KaCake.Controllers
         [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int? id)
         {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
             var teachersToAdd = _context.Users.Select(user =>
             new SelectListItem
             {
@@ -86,11 +91,13 @@ namespace KaCake.Controllers
                 teachersToAdd.RemoveAll(t => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Value)));
 
                 ViewData["TeachersToAdd"] = teachersToAdd;
-                ViewData["TeachersToRemove"] = editingCourse.Teachers.Select(teacher => new SelectListItem
-                {
-                    Text = teacher.Teacher.FullName,
-                    Value = teacher.TeacherId
-                });
+                ViewData["TeachersToRemove"] = editingCourse.Teachers
+                    .Where(teacher => KaCakeUtils.isAppointer(editingCourse, callerId, teacher))
+                    .Select(teacher => new SelectListItem
+                    {
+                        Text = teacher.Teacher.FullName,
+                        Value = teacher.TeacherId
+                    });
 
                 return View(new CreateViewModel()
                 {
@@ -111,6 +118,8 @@ namespace KaCake.Controllers
         [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(CreateViewModel course)
         {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
             if (ModelState.IsValid)
             {
                 Course editingCourse;
@@ -118,35 +127,79 @@ namespace KaCake.Controllers
                     _context.Courses.Include(c => c.Teachers)
                         .FirstOrDefault(c => c.Id == course.Id.Value)) != null)
                 {
-                    editingCourse.Name = course.Name;
-                    editingCourse.Description = course.Description;
-
-                    if (course.TeachersToAdd != null)
+                    // The course could be edited only by a teacher of that course
+                    if (editingCourse.Teachers.Any(teacher => callerId.Equals(teacher.AppointerId)))
                     {
-                        course.TeachersToAdd.Select(
-                            teacherId => new CourseTeacher
+                        editingCourse.Name = course.Name;
+                        editingCourse.Description = course.Description;
+
+                        if (course.TeachersToAdd != null)
+                        {
+                            course.TeachersToAdd.Select(
+                                teacherId => new CourseTeacher2
+                                {
+                                    CourseId = course.Id.GetValueOrDefault(),
+                                    TeacherId = teacherId,
+                                    AppointerId = callerId
+
+                                }
+                            ).ToList().ForEach(teacher => editingCourse.Teachers.Add(teacher));
+                        }
+
+                        if (course.TeachersToRemove != null)
+                        {
+                            var teachersToRemove = course.TeachersToRemove
+                                .Where(userId => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(userId)))
+                                .Select(teacherId => editingCourse.Teachers.First(teacher => teacher.TeacherId.Equals(teacherId)));
+
+                            foreach (var teacherToRemove in teachersToRemove)
                             {
-                                CourseId = course.Id.GetValueOrDefault(),
-                                TeacherId = teacherId
+                                // Only appointer can remove teachers appointed by him
+                                if (KaCakeUtils.isAppointer(editingCourse, callerId, teacherToRemove))
+                                {
+                                    editingCourse.Teachers.Remove(teacherToRemove);
+                                }
+                                else
+                                {
+                                    // Maybe there should be an error
+                                }
                             }
-                        ).ToList().ForEach(teacher => editingCourse.Teachers.Add(teacher));
-                    }
-
-                    if (course.TeachersToRemove != null)
-                    {
-                        course.TeachersToRemove
-                            .Where(userId => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(userId)))
-                            .Select(teacherId => editingCourse.Teachers.First(teacher => teacher.TeacherId.Equals(teacherId)))
-                            .ToList().ForEach(teacher => editingCourse.Teachers.Remove(teacher));
+                        }
                     }
                 }
                 else
                 {
-                    _context.Courses.Add(new Course()
+                    Course courseToAdd = new Course()
                     {
                         Name = course.Name,
                         Description = course.Description
-                    });
+                    };
+                    _context.Courses.Add(courseToAdd);
+                    _context.SaveChanges();
+
+                    // And now the id of the course could be obtained
+                    CourseTeacher2 courseTeacher = new CourseTeacher2
+                    {
+                        CourseId = courseToAdd.Id,
+                        TeacherId = callerId,
+                        AppointerId = callerId,
+                    };
+                    var teachers = new List<CourseTeacher2>();
+                    teachers.Add(courseTeacher);
+
+                    // Add all the 'Teachers to add'
+                    foreach(string teacherToAddId in course.TeachersToAdd)
+                    {
+                        teachers.Add(new CourseTeacher2
+                        {
+                            CourseId = courseToAdd.Id,
+                            TeacherId = teacherToAddId,
+                            AppointerId = callerId
+                        });
+                    }
+
+                    // Then set the 'teacher' field
+                    courseToAdd.Teachers = teachers;
                 }
                 _context.SaveChanges();
                 return RedirectToAction("Index", "Course");
