@@ -42,7 +42,7 @@ namespace KaCake.ControllersLogic
                     })
                     .ToList();
         }
-        
+
         public CourseViewModel GetCourse(string callerId, int courseId)
         {
             var viewingCourse = _context.Courses
@@ -53,7 +53,7 @@ namespace KaCake.ControllersLogic
 
             if (viewingCourse == null)
                 throw new NotFoundException();
-            
+
             return new CourseViewModel()
             {
                 Id = viewingCourse.Id,
@@ -73,7 +73,7 @@ namespace KaCake.ControllersLogic
                 IsUserATeacher = viewingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId)
             };
         }
-        
+
         public IList<UserInfoViewModel> GetTeachersCouldBeAdded(string callerId)
         {
             return _context.Users.Select(user =>
@@ -91,7 +91,7 @@ namespace KaCake.ControllersLogic
                     _context.Courses.Include(c => c.Teachers)
                         .FirstOrDefault(c => c.Id == courseId);
 
-            if(editingCourse == null)
+            if (editingCourse == null)
             {
                 throw new NotFoundException();
             }
@@ -113,7 +113,7 @@ namespace KaCake.ControllersLogic
                     _context.Courses.Include(c => c.Teachers)
                         .FirstOrDefault(c => c.Id == courseId);
 
-            if(editingCourse == null)
+            if (editingCourse == null)
             {
                 throw new NotFoundException();
             }
@@ -129,13 +129,65 @@ namespace KaCake.ControllersLogic
                         .ToList();
         }
 
-        public CourseViewModel Create(string callerId, ModelStateDictionary modelState, CreateViewModel course)
+        public IList<UserInfoViewModel> GetStudentsCouldBeAdded()
         {
-            if(!modelState.IsValid)
+            return _context.Users.Select(user =>
+                new UserInfoViewModel
+                {
+                    FullName = user.FullName,
+                    UserName = user.UserName,
+                    UserId = user.Id
+                }).ToList();
+        }
+
+        public IList<UserInfoViewModel> GetStudentsCouldBeAdded(int courseId)
+        {
+            var editingCourse =
+                _context.Courses.Include(c => c.Students)
+                .FirstOrDefault(c => c.Id == courseId);
+
+            if (editingCourse == null)
             {
-                throw new InvalidModelException();
+                throw new NotFoundException();
             }
 
+            var editingCourseStudentsIds = _context.Users
+                .Join(editingCourse.Students, u => u.Id, s => s.UserId, (u, s) => u.Id);
+
+            return _context.Users
+                .Where(u => !editingCourseStudentsIds.Contains(u.Id))
+                .Select(user =>
+                new UserInfoViewModel
+                {
+                    FullName = user.FullName,
+                    UserName = user.UserName,
+                    UserId = user.Id
+                }).ToList();
+        }
+
+        public IList<UserInfoViewModel> GetStudentsCouldBeRemoved(int courseId)
+        {
+            var editingCourse =
+                _context.Courses.Include(c => c.Students)
+                .FirstOrDefault(c => c.Id == courseId);
+
+            if (editingCourse == null)
+            {
+                throw new NotFoundException();
+            }
+
+            return _context.Users
+                .Join(editingCourse.Students, u => u.Id, s => s.UserId, (u, s) =>
+                new UserInfoViewModel
+                {
+                    FullName = u.FullName,
+                    UserName = u.UserName,
+                    UserId = u.Id
+                }).ToList();
+        }
+
+        public CourseViewModel Create(string callerId, CreateViewModel course)
+        {
             Course courseToAdd = new Course()
             {
                 Name = course.Name,
@@ -165,6 +217,13 @@ namespace KaCake.ControllersLogic
                 });
             }
 
+            courseToAdd.Students = course.StudentsToAdd
+                .Select(studentId => new CourseEnrollment
+                {
+                    UserId = studentId,
+                    CourseId = courseToAdd.Id
+                }).ToList();
+
             // Then set the 'teacher' field
             courseToAdd.Teachers = teachers;
 
@@ -173,16 +232,13 @@ namespace KaCake.ControllersLogic
             return GetCourse(callerId, courseToAdd.Id);
         }
 
-        public CourseViewModel Edit(string callerId, ModelStateDictionary modelState, int courseId, CreateViewModel course)
+        public CourseViewModel Edit(string callerId, int courseId, CreateViewModel course)
         {
-            if(!modelState.IsValid)
-            {
-                throw new InvalidModelException();
-            }
-
             Course editingCourse;
             if ((editingCourse =
-                _context.Courses.Include(c => c.Teachers)
+                _context.Courses
+                    .Include(c => c.Teachers)
+                    .Include(c => c.Students)
                     .FirstOrDefault(c => c.Id == courseId)) != null)
             {
                 // The course could be edited only by a teacher of that course
@@ -223,9 +279,39 @@ namespace KaCake.ControllersLogic
                             }
                         }
                     }
-                }
 
-                return GetCourse(callerId, courseId);
+                    if (course.StudentsToAdd != null)
+                    {
+                        foreach (var student in course.StudentsToAdd)
+                        {
+                            editingCourse.Students.Add(new CourseEnrollment
+                            {
+                                CourseId = editingCourse.Id,
+                                UserId = student
+                            });
+                        }
+                    }
+                    if (course.StudentsToRemove != null)
+                    {
+                        var studentsToRemove = course.StudentsToRemove
+                            .Where(userId => editingCourse.Students.Any(student => student.UserId == userId))
+                            .Select(studentId => editingCourse.Students.First(student => student.UserId == studentId));
+
+
+                        foreach (var student in studentsToRemove)
+                        {
+                            editingCourse.Students.Remove(student);
+                        }
+                    }
+
+                    _context.SaveChanges();
+
+                    return GetCourse(callerId, courseId);
+                }
+                else
+                {
+                    throw new IllegalAccessException();
+                }
             }
             else
             {

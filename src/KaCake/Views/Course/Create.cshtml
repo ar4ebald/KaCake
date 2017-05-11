@@ -27,6 +27,21 @@
     </div>
 
     <div class="form-group">
+        <label asp-for="StudentsToAdd" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <select asp-for="StudentsToAdd" asp-items="@ViewBag.StudentsToAdd" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
+            <span asp-validation-for="StudentsToAdd" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="form-group">
+        <label asp-for="StudentsToRemove" class="col-md-2 control-label"></label>
+        <div class="col-md-10">
+            <select asp-for="StudentsToRemove" asp-items="@ViewBag.StudentssToRemove" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>
+            <span asp-validation-for="StudentsToRemove" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="form-group">
         <label asp-for="TeachersToAdd" class="col-md-2 control-label"></label>
         <div class="col-md-10">
             <select asp-for="TeachersToAdd" asp-items="@ViewBag.TeachersToAdd" class="selectpicker" data-live-search="true" data-selected-text-format="count" multiple></select>

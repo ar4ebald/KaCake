@@ -18,6 +18,12 @@ namespace KaCake.ViewModels.Course
 
         public string Description { get; set; }
 
+        [Display(Name = "Students to add")]
+        public IEnumerable<string> StudentsToAdd { get; set; }
+
+        [Display(Name = "Student to remove")]
+        public IEnumerable<string> StudentsToRemove { get; set; }
+
         [Display(Name = "Teachers to add")]
         public IEnumerable<string> TeachersToAdd { get; set; }
 

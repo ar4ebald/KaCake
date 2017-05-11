@@ -275,6 +275,13 @@ namespace KaCake.Controllers
                 .Include(tv => tv.Assignments)
                 .FirstOrDefault(tv => tv.Id == id);
 
+            var taskVariantAssignments = _context.Assignments
+                .Include(ass => ass.User)
+                .Join(taskVariant.Assignments,
+                    ass => ass.TaskVariantId,
+                    tvAss => tvAss.TaskVariantId,
+                    (ass, tvAss) => ass);
+
             if (taskVariant == null)
                 return NotFound();
             if(!KaCakeUtils.IsCourseTeacher(_context, taskVariant.TaskGroup.CourseId, userId))
@@ -286,10 +293,10 @@ namespace KaCake.Controllers
             {
                 taskVariant.Id,
                 taskVariant.Name,
-                UsersToRemove =
-                    taskVariant.Assignments.Select(assignment => new
+                UsersToRemove = taskVariantAssignments
+                    .Select(assignment => new
                     {
-                        assignment.User.Id,
+                        assignment.UserId,
                         Name = assignment.User.FullName
                     }).ToList()
             };

@@ -125,6 +125,45 @@ namespace KaCake.Controllers
             }
         }
 
+        [Route("api/[controller]/[action]")]
+        public IActionResult GetSudentsCouldBeAdded()
+        {
+            try
+            {
+                return new ObjectResult(_courseLogic.GetStudentsCouldBeAdded());
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetSudentsCouldBeAdded(int courseId)
+        {
+            try
+            {
+                return new ObjectResult(_courseLogic.GetStudentsCouldBeAdded(courseId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetSudentsCouldBeRemoved(int courseId)
+        {
+            try
+            {
+                return new ObjectResult(_courseLogic.GetStudentsCouldBeRemoved(courseId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
 
         [HttpGet]
         [Authorize]
@@ -158,6 +197,18 @@ namespace KaCake.Controllers
                                 Text = teacher.FullName,
                                 Value = teacher.UserId
                             });
+                        ViewData["StudentsToAdd"] = _courseLogic.GetStudentsCouldBeAdded(editingCourse.Id)
+                            .Select(student => new SelectListItem
+                            {
+                                Text = student.FullName,
+                                Value = student.UserId
+                            });
+                        ViewData["StudentsToRemove"] = _courseLogic.GetStudentsCouldBeRemoved(editingCourse.Id)
+                            .Select(student => new SelectListItem
+                            {
+                                Text = student.FullName,
+                                Value = student.UserId
+                            });
                     }
                     catch(NotFoundException)
                     {
@@ -187,99 +238,53 @@ namespace KaCake.Controllers
                                 Value = t.UserId
                             }); ;
                 ViewData["TeachersToRemove"] = new List<SelectListItem>();
+
+                ViewData["StudentsToAdd"] = _courseLogic.GetStudentsCouldBeAdded()
+                    .Select(student => new SelectListItem
+                    {
+                        Text = student.FullName,
+                        Value = student.UserId
+                    });
+                ViewData["StudentsToRemove"] = new List<SelectListItem>();
                 return View();
             }
         }
 
         [HttpPost]
         [Authorize]
+        [Route("[controller]/[action]")]
         public IActionResult Create(CreateViewModel course)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
 
             if (ModelState.IsValid)
             {
+                CourseViewModel result;
+
                 Course editingCourse;
-                if (course.Id.HasValue && (editingCourse =
-                    _context.Courses.Include(c => c.Teachers)
-                        .FirstOrDefault(c => c.Id == course.Id.Value)) != null)
+
+                try
                 {
-                    // The course could be edited only by a teacher of that course
-                    if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
+                    if (course.Id.HasValue && (editingCourse =
+                        _context.Courses.Include(c => c.Teachers)
+                            .FirstOrDefault(c => c.Id == course.Id.Value)) != null)
                     {
-                        editingCourse.Name = course.Name;
-                        editingCourse.Description = course.Description;
-
-                        if (course.TeachersToAdd != null)
-                        {
-                            course.TeachersToAdd.Select(
-                                teacherId => new CourseTeacher2
-                                {
-                                    CourseId = course.Id.GetValueOrDefault(),
-                                    TeacherId = teacherId,
-                                    AppointerId = callerId
-
-                                }
-                            ).ToList().ForEach(teacher => editingCourse.Teachers.Add(teacher));
-                        }
-
-                        if (course.TeachersToRemove != null)
-                        {
-                            var teachersToRemove = course.TeachersToRemove
-                                .Where(userId => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(userId)))
-                                .Select(teacherId => editingCourse.Teachers.First(teacher => teacher.TeacherId.Equals(teacherId)));
-
-                            foreach (var teacherToRemove in teachersToRemove)
-                            {
-                                // Only appointer can remove teachers appointed by him
-                                if (KaCakeUtils.isAppointer(editingCourse, callerId, teacherToRemove))
-                                {
-                                    editingCourse.Teachers.Remove(teacherToRemove);
-                                }
-                                else
-                                {
-                                    // Maybe there should be an error
-                                }
-                            }
-                        }
+                        result = _courseLogic.Edit(callerId, editingCourse.Id, course);
                     }
+                    else
+                    {
+                        result = _courseLogic.Create(callerId, course);
+                    }
+                    return RedirectToAction("Index", "Course");
                 }
-                else
+                catch(NotFoundException)
                 {
-                    Course courseToAdd = new Course()
-                    {
-                        Name = course.Name,
-                        Description = course.Description
-                    };
-                    _context.Courses.Add(courseToAdd);
-                    _context.SaveChanges();
-
-                    // And now the id of the course could be obtained
-                    CourseTeacher2 courseTeacher = new CourseTeacher2
-                    {
-                        CourseId = courseToAdd.Id,
-                        TeacherId = callerId,
-                        AppointerId = callerId,
-                    };
-                    var teachers = new List<CourseTeacher2>();
-                    teachers.Add(courseTeacher);
-
-                    // Add all the 'Teachers to add'
-                    foreach(string teacherToAddId in course.TeachersToAdd)
-                    {
-                        teachers.Add(new CourseTeacher2
-                        {
-                            CourseId = courseToAdd.Id,
-                            TeacherId = teacherToAddId,
-                            AppointerId = callerId
-                        });
-                    }
-
-                    // Then set the 'teacher' field
-                    courseToAdd.Teachers = teachers;
+                    return NotFound();
                 }
-                _context.SaveChanges();
-                return RedirectToAction("Index", "Course");
+                catch(IllegalAccessException)
+                {
+                    return Challenge();
+                }
             }
             return View(course);
         }
@@ -294,7 +299,7 @@ namespace KaCake.Controllers
 
             try
             {
-                return new ObjectResult(_courseLogic.Create(callerId, ModelState, course));
+                return new ObjectResult(_courseLogic.Create(callerId, course));
             }
             catch(NotFoundException)
             {
@@ -315,7 +320,7 @@ namespace KaCake.Controllers
 
             try
             {
-                return new ObjectResult(_courseLogic.Edit(callerId, ModelState, courseId, course));
+                return new ObjectResult(_courseLogic.Edit(callerId, courseId, course));
             }
             catch (NotFoundException)
             {

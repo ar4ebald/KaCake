@@ -16,6 +16,14 @@
     }
 </div>
 
+<h4>Students (@Model.Students.Count):</h4>
+<div class="list-group">
+    @foreach (var student in Model.Students)
+    {
+        <p class="list-group-item">@student.FullName</p>
+    }
+</div>
+
 <h4>Tasks (@Model.TaskGroups.Count):</h4>
 <div class="list-group">
     @if (Model.IsUserATeacher)
