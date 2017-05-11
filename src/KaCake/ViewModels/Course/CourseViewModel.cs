@@ -19,6 +19,8 @@ namespace KaCake.ViewModels.Course
 
         public IList<TaskGroupViewModel> TaskGroups { get; set; }
 
+        public IList<UserInfoViewModel> Students { get; set; }
+
         public IList<UserInfoViewModel> Teachers { get; set; }
 
         public bool IsUserATeacher { get; set; }

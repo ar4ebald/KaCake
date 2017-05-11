@@ -15,6 +15,7 @@ using KaCake.Utils;
 using KaCake.ViewModels.UserInfo;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Identity;
+using KaCake.ControllersLogic;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -25,69 +26,111 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        private readonly CourseLogic _courseLogic;
+
         public CourseController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
+
+            _courseLogic = new CourseLogic(context, userManager);
         }
 
         public IActionResult Index()
         {
-            string callerId = _userManager.GetUserId(HttpContext.User);
-
             return View(new ViewModels.Course.IndexViewModel()
             {
-                Courses = _context.Courses
-                    .Select(course => new CourseViewModel()
-                    {
-                        Id = course.Id,
-                        Name = course.Name
-                    })
-                    .ToList()
+                Courses = _courseLogic.GetAllCourses()
             });
         }
 
+        [Route("api/[controller]/[action]")]
+        public IActionResult GetAllCourses()
+        {
+            return new ObjectResult(_courseLogic.GetAllCourses());
+        }
+
         [HttpGet]
+        [Authorize]
         public IActionResult View(int id)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
 
-            var viewingCourse = _context.Courses
-                .Include(course => course.TaskGroups)
-                .Include(course => course.Teachers)
-                .FirstOrDefault(course => course.Id == id);
-
-            if (viewingCourse == null)
-                return NotFound();
-
-            return View(new CourseViewModel()
+            try
             {
-                Id = viewingCourse.Id,
-                Name = viewingCourse.Name,
-                Description = viewingCourse.Description,
-                TaskGroups = viewingCourse.TaskGroups.Select(taskGroup => new TaskGroupViewModel()
-                {
-                    Id = taskGroup.Id,
-                    Name = taskGroup.Name
-                }).ToList(),
-                Teachers = viewingCourse.Teachers.Select(
-                    teacher => KaCakeUtils.createUserInfoViewModel(_context, teacher.TeacherId))
-                    .ToList(),
-                IsUserATeacher = viewingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId)
-            });
+                return View(_courseLogic.GetCourse(callerId, id));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
         }
-
-        [HttpGet]
-        public IActionResult Create(int? id)
+        
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetCourse(int courseId)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
 
-            var teachersToAdd = _context.Users.Select(user =>
-            new SelectListItem
+            try
             {
-                Text = user.FullName,
-                Value = user.Id
-            }).ToList();
+                return new ObjectResult(_courseLogic.GetCourse(callerId, courseId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("api/[controller]/[action]")]
+        public IActionResult GetTeachersCouldBeAdded()
+        {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
+            return new ObjectResult(_courseLogic
+                .GetTeachersCouldBeAdded(callerId));
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetTeachersCouldBeAdded(int courseId)
+        {
+            try
+            {
+                return new ObjectResult(_courseLogic
+                    .GetTeachersCouldBeAdded(_userManager.GetUserId(HttpContext.User), courseId));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetTeachersCouldBeRemoved(int courseId)
+        {
+            try
+            {
+                return new ObjectResult(_courseLogic
+                    .GetTeachersCouldBeRemoved(_userManager.GetUserId(HttpContext.User), courseId));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+
+        [HttpGet]
+        [Authorize]
+        public IActionResult Create(int? id)
+        {
+            string callerId = _userManager.GetUserId(HttpContext.User);
 
             Course editingCourse;
             if (id.HasValue 
@@ -98,16 +141,28 @@ namespace KaCake.Controllers
                 // Only teachers could edit course
                 if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
                 {
-                    teachersToAdd.RemoveAll(t => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Value)));
+                    try
+                    {
+                        ViewData["TeachersToAdd"] = _courseLogic.GetTeachersCouldBeAdded(callerId, editingCourse.Id)
+                            .Select(
+                                t =>
+                                new SelectListItem
+                                {
+                                    Text = t.FullName,
+                                    Value = t.UserId
+                                });
 
-                    ViewData["TeachersToAdd"] = teachersToAdd;
-                    ViewData["TeachersToRemove"] = editingCourse.Teachers
-                        .Where(teacher => KaCakeUtils.isAppointer(editingCourse, callerId, teacher))
-                        .Select(teacher => new SelectListItem
-                        {
-                            Text = _context.Users.Find(teacher.TeacherId).FullName,
-                            Value = teacher.TeacherId
-                        });
+                        ViewData["TeachersToRemove"] = _courseLogic.GetTeachersCouldBeRemoved(callerId, editingCourse.Id)
+                            .Select(teacher => new SelectListItem
+                            {
+                                Text = teacher.FullName,
+                                Value = teacher.UserId
+                            });
+                    }
+                    catch(NotFoundException)
+                    {
+                        return NotFound();
+                    }
 
                     return View(new CreateViewModel()
                     {
@@ -123,13 +178,21 @@ namespace KaCake.Controllers
             }
             else
             {
-                ViewData["TeachersToAdd"] = teachersToAdd;
+                ViewData["TeachersToAdd"] = _courseLogic.GetTeachersCouldBeAdded(callerId)
+                        .Select(
+                            t =>
+                            new SelectListItem
+                            {
+                                Text = t.FullName,
+                                Value = t.UserId
+                            }); ;
                 ViewData["TeachersToRemove"] = new List<SelectListItem>();
                 return View();
             }
         }
 
         [HttpPost]
+        [Authorize]
         public IActionResult Create(CreateViewModel course)
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
@@ -219,6 +282,49 @@ namespace KaCake.Controllers
                 return RedirectToAction("Index", "Course");
             }
             return View(course);
+        }
+
+
+        [HttpPost]
+        [Authorize]
+        [Route("api/[controller]/[action]")]
+        public IActionResult CreateCourse([FromBody] CreateViewModel course)
+        {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                return new ObjectResult(_courseLogic.Create(callerId, ModelState, course));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [HttpPost]
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult EditCourse(int courseId, [FromBody] CreateViewModel course)
+        {
+            string callerId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                return new ObjectResult(_courseLogic.Edit(callerId, ModelState, courseId, course));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
     }
 }

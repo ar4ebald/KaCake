@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using KaCake.ViewModels.UserInfo;
 using KaCake.Data;
@@ -30,7 +31,9 @@ namespace KaCake.Utils
 
         public static bool IsCourseTeacher(ApplicationDbContext context, int courseId, string userId)
         {
-            Course course = context.Courses.Find(courseId);
+            Course course = context.Courses
+                .Include(c => c.Teachers)
+                .FirstOrDefault(c => c.Id == courseId);
 
             if (course != null)
             {

@@ -10,6 +10,7 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Project;
 using KaCake.Utils;
+using KaCake.ControllersLogic;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -22,155 +23,159 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        private readonly ProjectLogic _projectLogic;
+
         public ProjectController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
+
+            _projectLogic = new ProjectLogic(context, userManager);
         }
 
         [Authorize]
-        public IActionResult Index(int id)
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult Index(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id 
-                && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
-
-            var viewModel = submissions
-                .Select(submission => new
-                {
-                    RootPath = submission.Path,
-                    Model = new IndexViewModel()
-                    {
-                        UserName = submission.Assignment.User.FullName,
-                        TaskGroupName = submission.Assignment.TaskVariant.TaskGroup.Name,
-                        TaskVariantName = submission.Assignment.TaskVariant.Name,
-                        SubmissionTime = submission.Time,
-                        SubmissionId = submission.Id,
-                        IsCourseTeacher = KaCakeUtils.IsCourseTeacher(_context, submission.Assignment.TaskVariant.TaskGroup.CourseId, userId)
-                    }
-                }).FirstOrDefault();
-
-            if (viewModel == null)
+            try
+            {
+                var viewModel = _projectLogic.GetProject(userId, submissionId);
+                return View(viewModel);
+            }
+            catch(NotFoundException)
+            {
                 return NotFound();
-
-            viewModel.Model.Root = GetEntires(new DirectoryInfo(viewModel.RootPath));
-
-            return View(viewModel.Model);
+            }
         }
 
         [Authorize]
-        public IActionResult GetFile(int id, [FromQuery]string file)
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult GetProject(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
-            var submissions = _context.Submissions
-                 .Where(submission => submission.Id == id
-                    && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
-
-            string root = submissions
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
-
-            if (root == null || file == null)
-                return NotFound();
-
-            string path = Path.Combine(root, file);
-            if (!System.IO.File.Exists(path))
-                return NotFound();
-
-            string commentsPath = path + CommentsFileExtension;
-            if (System.IO.File.Exists(commentsPath))
+            try
             {
-                return Json(new
-                {
-                    Text = System.IO.File.ReadAllText(path),
-                    Comments = System.IO.File.ReadAllText(commentsPath)
-                });
+                return new ObjectResult(_projectLogic.GetProject(userId, submissionId));
             }
-
-            return Json(new
+            catch(NotFoundException)
             {
-                Text = System.IO.File.ReadAllText(path)
-            });
+                return NotFound();
+            }
         }
 
         [Authorize]
-        public IActionResult GetAllComments(int id)
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult GetFile(int submissionId, [FromQuery]string file)
         {
             string userId = _userManager.GetUserId(User);
 
-            var submissions = _context.Submissions
-                 .Where(submission => submission.Id == id
-                    && (submission.Assignment.UserId == userId || submission.Assignment.ReviewerId == userId));
-
-            string root = submissions
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
-
-            if(root == null)
+            try
+            {
+                var fileVm = _projectLogic.GetFileContent(userId, submissionId, file);
+                return Json(fileVm);
+            }
+            catch(NotFoundException)
             {
                 return NotFound();
             }
+        }
 
-            if(!System.IO.Directory.Exists(root))
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}/{file}")]
+        public IActionResult GetFileContent(int submissionId, string file)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                return new ObjectResult(_projectLogic.GetFileContent(userId, submissionId, file));
+            }
+            catch (NotFoundException)
             {
                 return NotFound();
             }
+        }
 
-            string[] commentsFiles = Directory.GetFiles(root, "*" + CommentsFileExtension, SearchOption.AllDirectories);
-            List<object> commentsList = new List<object>();
-            foreach(string file in commentsFiles)
+        [Authorize]
+        public IActionResult GetAllComments(int submissionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
             {
-                string comments = System.IO.File.ReadAllText(file);
-                var jarr = Newtonsoft.Json.Linq.JArray.Parse(comments);
-                commentsList.AddRange(jarr);
+                var commentsList = _projectLogic.GetAllComments(userId, submissionId);
+                return Json(commentsList);
             }
-            
-            return Json(commentsList);
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult GetAllProjectComments(int submissionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                return new ObjectResult(_projectLogic.GetAllComments(userId, submissionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
         }
         
-        public IActionResult SaveComments(int id, string file, string commentsJson)
+        [Authorize]
+        public IActionResult SaveComments(int submissionId, string file, string commentsJson)
         {
             string userId = _userManager.GetUserId(HttpContext.User);
-            var submission = _context.Submissions.Find(id);
 
-            if(!KaCakeUtils.IsCourseTeacher(_context, submission.Assignment.TaskVariant.TaskGroup.CourseId, userId))
+            try
+            {
+                if (_projectLogic.SaveComments(userId, submissionId, file, commentsJson))
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
             {
                 return Challenge();
             }
-
-            string root = submission.Path;
-
-            if (root == null || file == null || commentsJson == null)
-                return NotFound();
-
-            string path = Path.Combine(root, file);
-            if (!System.IO.File.Exists(path))
-                return NotFound();
-
-            string jsonPath = path + CommentsFileExtension;
-            System.IO.File.WriteAllText(jsonPath, commentsJson);
-
-            return Ok();
         }
 
-        private static IndexViewModel.FileSystemEntry GetEntires(DirectoryInfo directory)
+        [HttpPost]
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}/{file}")]
+        public IActionResult SaveFileComments(int submissionId, string file, [FromQuery] string commentsJson)
         {
-            return new IndexViewModel.FileSystemEntry()
+            string userId = _userManager.GetUserId(User);
+
+            try
             {
-                Name = directory.Name,
-                IsDirectory = true,
-                SubEntries = directory.EnumerateDirectories()
-                    .Select(GetEntires)
-                    .Concat(directory.EnumerateFiles().Where(file => !file.Name.EndsWith(CommentsFileExtension)).Select(file => new IndexViewModel.FileSystemEntry()
-                    {
-                        Name = Path.GetFileName(file.Name),
-                        IsDirectory = false
-                    }))
-                    .ToList()
-            };
+                return new ObjectResult(_projectLogic.SaveComments(userId, submissionId, file, commentsJson));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
     }
 }

@@ -21,7 +21,7 @@ namespace KaCake.ViewModels.TaskGroup
 
         public double Score { get; set; }
 
-        public List<SubmissionViewModel> Submissions { get; set; }
+        public IList<SubmissionViewModel> Submissions { get; set; }
 
         public AddSubmissionViewModel NewSubmissionViewModel { get; set; }
     }

@@ -24,6 +24,8 @@ namespace KaCake.ViewModels.TaskVariant
 
         public bool IsAssigned { get; set; }
 
+        public bool IsNeedingReview { get; set; }
+
         public string Description { get; set; }
 
         public int AssignmentsCount { get; set; }

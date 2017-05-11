@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Submission;
+using KaCake.ControllersLogic;
 
 namespace KaCake.Controllers
 {
@@ -19,57 +20,111 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        private readonly SubmissionLogic _submissionLogic;
+
         public SubmissionController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
+
+            _submissionLogic = new SubmissionLogic(context, userManager);
         }
 
         [Authorize]
-        public IActionResult View(int id)
+        public IActionResult View(int submssionId)
         {
             string userId = _userManager.GetUserId(User);
 
-            SubmissionViewModel viewModel = _context.Submissions
-                .Where(submission => submission.Id == id && submission.Assignment.UserId == userId)
-                .Select(submission => new SubmissionViewModel()
-                {
-                    Id = submission.Id,
-                    Time = submission.Time
-                }).FirstOrDefault();
-
-            return View(viewModel);
-        }
-
-        [Authorize]
-        public IActionResult Delete(int id)
-        {
-            string userId = _userManager.GetUserId(User);
-
-            var toDelete = _context.Submissions
-                .Include(submission => submission.Assignment)
-                .Where(submission => submission.Assignment.UserId == userId && submission.Id == id)
-                .Select(submission => new
-                {
-                    Submission = submission,
-                    submission.Assignment,
-                    SubmissionsCount = submission.Assignment.Submissions.Count
-                })
-                .FirstOrDefault();
-
-            if (toDelete == null)
+            try
+            {
+                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submssionId);
+                return View(viewModel);
+            }
+            catch(NotFoundException)
+            {
                 return NotFound();
-
-            Directory.Delete(toDelete.Submission.Path, true);
-
-            _context.Submissions.Remove(toDelete.Submission);
-
-            if (toDelete.Assignment.Status != ReviewStatus.Graded && toDelete.SubmissionsCount <= 1)
-                toDelete.Assignment.Status = ReviewStatus.Assigned;
-
-            _context.SaveChanges();
-
-            return RedirectToAction("View", "Assignment", new { id = toDelete.Assignment.TaskVariantId });
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult GetAssignment(int submssionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submssionId);
+                return new ObjectResult(viewModel);
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        public IActionResult Delete(int submssionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                int result = _submissionLogic.DeleteSubmssion(userId, submssionId);
+                if (result != -1)
+                {
+                    return RedirectToAction("View", "Assignment", new { id = result });
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult DeleteAssignment(int submssionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                int result = _submissionLogic.DeleteSubmssion(userId, submssionId);
+                if (result != -1)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
     }
 }

@@ -16,6 +16,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="1.1.2" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="1.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="1.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="1.1.1" />
     <PackageReference Include="sharpcompress" Version="0.15.2" />
   </ItemGroup>
   
@@ -28,11 +29,9 @@
     <Compile Include="Controllers\*.cs" />
     <Compile Include="Services\*.cs" />
     <Compile Include="ViewModels\**\*.cs" />
+    <Compile Include="ControllersLogic\*.cs" />
+    <Compile Include="Utils\*.cs" />
     <!--<Compile Include="View\*.cs" />-->
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="Utils\KaCakeUtils.cs" />
   </ItemGroup>
 
   <!--<ItemGroup>
