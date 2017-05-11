@@ -12,3 +12,13 @@
     <a asp-controller="Project" asp-action="Index" asp-route-id="@Model.Id" class="btn btn-primary">View files</a>
     <a asp-controller="Submission" asp-action="Delete" asp-route-id="@Model.Id" class="btn btn-danger" data-toggle="confirmation">Delete submission</a>
 </div>
+
+@if (Model.ReviewTitle != null)
+{
+    <h3>@Model.ReviewTitle</h3>
+    <div class="well">
+        <samp>
+            @Html.Raw(Model.ReviewMessage.Replace("\n", "<br>"))
+        </samp>
+    </div>
+}

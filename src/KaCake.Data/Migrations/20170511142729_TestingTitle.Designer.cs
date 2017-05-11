@@ -4,17 +4,18 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using KaCake.Data;
+using KaCake.Data.Models;
 
 namespace KaCake.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161221011717_Courses")]
-    partial class Courses
+    [Migration("20170511142729_TestingTitle")]
+    partial class TestingTitle
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.0-rtm-22752")
+                .HasAnnotation("ProductVersion", "1.1.2")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
@@ -31,6 +32,10 @@ namespace KaCake.Data.Migrations
                         .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed");
+
+                    b.Property<string>("FirstName");
+
+                    b.Property<string>("LastName");
 
                     b.Property<bool>("LockoutEnabled");
 
@@ -73,11 +78,19 @@ namespace KaCake.Data.Migrations
 
                     b.Property<string>("UserId");
 
+                    b.Property<DateTime>("DeadlineUtc");
+
                     b.Property<bool>("IsChecked");
+
+                    b.Property<string>("ReviewerId");
 
                     b.Property<double>("Score");
 
+                    b.Property<int>("Status");
+
                     b.HasKey("TaskVariantId", "UserId");
+
+                    b.HasIndex("ReviewerId");
 
                     b.HasIndex("UserId");
 
@@ -124,6 +137,14 @@ namespace KaCake.Data.Migrations
                         .IsRequired();
 
                     b.Property<string>("Path");
+
+                    b.Property<DateTime>("PickedForTestingTimeUtc");
+
+                    b.Property<string>("ReviewMessage");
+
+                    b.Property<string>("ReviewTitle");
+
+                    b.Property<int>("Status");
 
                     b.Property<DateTime>("Time");
 
@@ -281,6 +302,10 @@ namespace KaCake.Data.Migrations
 
             modelBuilder.Entity("KaCake.Data.Models.Assignment", b =>
                 {
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId");
+
                     b.HasOne("KaCake.Data.Models.TaskVariant", "TaskVariant")
                         .WithMany("Assignments")
                         .HasForeignKey("TaskVariantId")

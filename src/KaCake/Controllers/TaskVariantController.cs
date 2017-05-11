@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +14,7 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.TaskGroup;
 using KaCake.ViewModels.TaskVariant;
+using Microsoft.AspNetCore.Hosting;
 
 namespace KaCake.Controllers
 {
@@ -21,12 +23,18 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IHostingEnvironment _env;
 
-        public TaskVariantController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+        public TaskVariantController(
+            ApplicationDbContext context, 
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager, 
+            IHostingEnvironment env)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _env = env;
         }
 
         [Authorize]
@@ -34,35 +42,26 @@ namespace KaCake.Controllers
         {
             string userId = _userManager.GetUserId(User);
 
-            TaskVariant taskVariant = _context.TaskVariants.Find(id);
-            if(taskVariant == null)
-            {
-                return NotFound();
-            }
-
-            TaskVariantViewModel viewModel = new TaskVariantViewModel()
-            {
-                Id = id,
-                Name = taskVariant.Name,
-                Description = taskVariant.Description,
-                TaskGroupId = taskVariant.TaskGroupId
-            };
-            if(taskVariant.TaskGroup != null)
-            {
-                viewModel.TaskGroupName = taskVariant.TaskGroup.Name;
-                viewModel.CourseId = taskVariant.TaskGroup.CourseId;
-                if(taskVariant.TaskGroup.Course != null)
+            var model = _context.TaskVariants
+                .Where(variant => variant.Id == id)
+                .Select(variant => new TaskVariantViewModel
                 {
-                    viewModel.CourseName = taskVariant.TaskGroup.Course.Name;
-                }
-            }
-            if(taskVariant.Assignments != null)
-            {
-                viewModel.AssignmentsCount = taskVariant.Assignments.Count;
-                viewModel.IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId);
-            }
+                    Id = variant.Id,
+                    Name = variant.Name,
+                    Description = variant.Description,
+                    TaskGroupId = variant.TaskGroupId,
+                    TaskGroupName = variant.TaskGroup.Name,
+                    CourseId = variant.TaskGroup.CourseId,
+                    CourseName = variant.TaskGroup.Course.Name,
+                    AssignmentsCount = variant.Assignments.Count,
+                    IsAssigned = variant.Assignments.Any(assignment => assignment.UserId == userId)
+                })
+                .FirstOrDefault();
 
-            return View(viewModel);
+            if (model == null)
+                return NotFound();
+
+            return View(model);
         }
 
         [HttpGet]
@@ -92,11 +91,24 @@ namespace KaCake.Controllers
         {
             if (ModelState.IsValid)
             {
+                var testerFile = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", taskVariant.Id.ToString()));
+                if (taskVariant.TesterArchive == null)
+                {
+                    if (testerFile.Exists)
+                        testerFile.Delete();
+                }
+                else
+                {
+                    using (var file = testerFile.OpenWrite())
+                        taskVariant.TesterArchive.CopyTo(file);
+                }
+
                 TaskVariant editingTaskVariant;
                 if ((editingTaskVariant = _context.TaskVariants.Find(taskVariant.Id)) != null)
                 {
                     editingTaskVariant.Name = taskVariant.Name;
                     editingTaskVariant.Description = taskVariant.Description;
+
                     _context.SaveChanges();
                 }
                 else

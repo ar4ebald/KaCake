@@ -1,4 +1,8 @@
-﻿body {
+﻿.well td {
+    padding: 5px;
+}
+
+body {
     padding-top: 50px;
     padding-bottom: 20px;
 }
@@ -25,28 +29,28 @@ textarea {
 
 /* buttons and links extension to use brackets: [ click me ] */
 .btn-bracketed::before {
-    display:inline-block;
+    display: inline-block;
     content: "[";
     padding-right: 0.5em;
 }
+
 .btn-bracketed::after {
-    display:inline-block;
+    display: inline-block;
     content: "]";
     padding-left: 0.5em;
 }
 
 /* Make .svg files in the carousel display properly in older browsers */
-.carousel-inner .item img[src$=".svg"]
-{
+.carousel-inner .item img[src$=".svg"] {
     width: 100%;
 }
 
 /* Hide/rearrange for smaller screens */
 @media screen and (max-width: 767px) {
-  /* Hide captions */
-  .carousel-caption {
-    display: none
-  }
+    /* Hide captions */
+    .carousel-caption {
+        display: none
+    }
 }
 
 .nav-tabs > li > span {
@@ -66,9 +70,9 @@ textarea {
     background: rgba(255, 255, 255, 0.7);
     padding-top: 12px;
     border-top: 2px solid rgba(155, 155, 155, 0.77);
+    .results tr[visible='false'], .no-result
 
-.results tr[visible='false'],
-.no-result {
+{
     display: none;
 }
 

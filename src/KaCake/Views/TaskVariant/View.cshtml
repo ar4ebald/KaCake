@@ -10,7 +10,9 @@
     <a asp-controller="TaskGRoup" asp-action="View" asp-route-id="@Model.TaskGroupId">@Model.TaskGroupName</a> / @Model.Name
 </h2>
 
-<div class="well">@Html.Raw(Model.Description)</div>
+<div class="well">
+    @Html.Raw(Model.Description)
+</div>
 
 <div class="btn-group">
     @if (Model.IsAssigned)

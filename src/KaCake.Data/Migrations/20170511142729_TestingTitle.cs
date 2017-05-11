@@ -4,22 +4,21 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace KaCake.Data.Migrations
 {
-    public partial class AddReviewStatusToAssignment : Migration
+    public partial class TestingTitle : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "Status",
-                table: "Assignments",
-                nullable: false,
-                defaultValue: 0);
+            migrationBuilder.AddColumn<string>(
+                name: "ReviewTitle",
+                table: "Submissions",
+                nullable: true);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Status",
-                table: "Assignments");
+                name: "ReviewTitle",
+                table: "Submissions");
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿@using System.Globalization
+@using KaCake.ViewModels.Submission
 @model AssignmentViewModel
 
 @{
@@ -16,14 +17,23 @@
     <div class="list-group">
         <div class="list-group-item">
             <div asp-validation-summary="All" class="text-danger"></div>
-            <input asp-for="NewSubmissionViewModel.TaskVariantId"/>
-            <input asp-for="NewSubmissionViewModel.Files" class="form-control"/>
+            <input asp-for="NewSubmissionViewModel.TaskVariantId" />
+            <input asp-for="NewSubmissionViewModel.Files" class="form-control" />
             <button type="submit" class="btn btn-default">Upload submission</button>
         </div>
-        
+
         @foreach (var submission in Model.Submissions)
         {
-            <a asp-controller="Submission" asp-action="View" asp-route-id="@submission.Id" class="list-group-item">@submission.Time</a>
+            string linkClass = "list-group-item";
+            if (submission.Status == TestingStatus.Passed)
+            {
+                linkClass += " list-group-item-success";
+            }
+            else if (submission.Status == TestingStatus.Failed)
+            {
+                linkClass += " list-group-item-danger";
+            }
+            <a asp-controller="Submission" asp-action="View" asp-route-id="@submission.Id" class="@linkClass">@submission</a>
         }
     </div>
 </form>

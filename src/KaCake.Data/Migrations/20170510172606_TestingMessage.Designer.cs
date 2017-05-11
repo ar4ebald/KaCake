@@ -9,13 +9,13 @@ using KaCake.Data.Models;
 namespace KaCake.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20161224151919_AddReviewStatusToAssignment")]
-    partial class AddReviewStatusToAssignment
+    [Migration("20170510172606_TestingMessage")]
+    partial class TestingMessage
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.0-rtm-22752")
+                .HasAnnotation("ProductVersion", "1.1.2")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
@@ -32,6 +32,10 @@ namespace KaCake.Data.Migrations
                         .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed");
+
+                    b.Property<string>("FirstName");
+
+                    b.Property<string>("LastName");
 
                     b.Property<bool>("LockoutEnabled");
 
@@ -134,6 +138,12 @@ namespace KaCake.Data.Migrations
 
                     b.Property<string>("Path");
 
+                    b.Property<DateTime>("PickedForTestingTimeUtc");
+
+                    b.Property<string>("ReviewMessage");
+
+                    b.Property<int>("Status");
+
                     b.Property<DateTime>("Time");
 
                     b.HasKey("Id");
@@ -173,6 +183,8 @@ namespace KaCake.Data.Migrations
                         .HasMaxLength(256);
 
                     b.Property<int>("TaskGroupId");
+
+                    b.Property<string>("TesterArchivePath");
 
                     b.HasKey("Id");
 

@@ -96,7 +96,8 @@ namespace KaCake.Controllers
                     Submissions = assignment.Submissions.Select(submission => new SubmissionViewModel()
                     {
                         Id = submission.Id,
-                        Time = submission.Time
+                        Time = submission.Time,
+                        Status = submission.Status
                     }).ToList(),
                     NewSubmissionViewModel = new AddSubmissionViewModel()
                     {
@@ -126,14 +127,17 @@ namespace KaCake.Controllers
                 if (assignment.UserId != userId)
                     return Challenge();
 
-                string submissionRoot = Path.Combine(_env.WebRootPath, "Submissions", userId, Guid.NewGuid().ToString());
+                string submissionRoot = Path.Combine(_env.WebRootPath, "App_Data", "Submissions", userId, Guid.NewGuid().ToString());
+                string testerPath = Path.Combine(_env.WebRootPath, "App_Data", "Testers", newSubmission.TaskVariantId.ToString());
+                bool testerExists = System.IO.File.Exists(testerPath);
 
                 _context.Submissions.Add(new Submission()
                 {
                     Assignment = assignment,
                     Path = submissionRoot,
                     // TODO: change to UTC
-                    Time = DateTime.Now
+                    Time = DateTime.Now,
+                    Status = testerExists ? TestingStatus.Pending : TestingStatus.Testing
                 });
 
                 if (assignment.Status != ReviewStatus.Graded)
@@ -234,7 +238,8 @@ namespace KaCake.Controllers
                     Submissions = assign.Submissions.Select(submission => new SubmissionViewModel()
                     {
                         Id = submission.Id,
-                        Time = submission.Time
+                        Time = submission.Time,
+                        Status = submission.Status
                     }).ToList()
                 }).First();
 

@@ -35,7 +35,10 @@ namespace KaCake.Controllers
                 .Select(submission => new SubmissionViewModel()
                 {
                     Id = submission.Id,
-                    Time = submission.Time
+                    Time = submission.Time,
+                    Status = submission.Status,
+                    ReviewTitle = submission.ReviewTitle,
+                    ReviewMessage = submission.ReviewMessage
                 }).FirstOrDefault();
 
             return View(viewModel);
@@ -60,7 +63,11 @@ namespace KaCake.Controllers
             if (toDelete == null)
                 return NotFound();
 
-            Directory.Delete(toDelete.Submission.Path, true);
+            try
+            {
+                Directory.Delete(toDelete.Submission.Path, true);
+            }
+            catch (IOException) { }
 
             _context.Submissions.Remove(toDelete.Submission);
 

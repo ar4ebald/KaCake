@@ -14,7 +14,7 @@ namespace KaCake.Data.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.1")
+                .HasAnnotation("ProductVersion", "1.1.2")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
@@ -136,6 +136,14 @@ namespace KaCake.Data.Migrations
                         .IsRequired();
 
                     b.Property<string>("Path");
+
+                    b.Property<DateTime>("PickedForTestingTimeUtc");
+
+                    b.Property<string>("ReviewMessage");
+
+                    b.Property<string>("ReviewTitle");
+
+                    b.Property<int>("Status");
 
                     b.Property<DateTime>("Time");
 
