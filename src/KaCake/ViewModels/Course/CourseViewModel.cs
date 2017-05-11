@@ -25,5 +25,6 @@ namespace KaCake.ViewModels.Course
 
         public bool IsUserATeacher { get; set; }
 
+        public bool CanDeleteThisCourse { get; set; }
     }
 }

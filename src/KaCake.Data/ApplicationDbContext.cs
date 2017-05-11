@@ -80,7 +80,7 @@ namespace KaCake.Data
                 .WithOne(submission => submission.Assignment)
                 .IsRequired();
 
-            // Course teacher key definition
+            // CourseTeacher key definition
             builder.Entity<CourseTeacher2>()
                 .HasKey(courseTeacher => new { courseTeacher.CourseId, courseTeacher.TeacherId });
 
@@ -97,6 +97,22 @@ namespace KaCake.Data
                 .WithOne(teacher => teacher.Teacher)
                 .HasForeignKey(teacher => teacher.TeacherId)
                 .IsRequired();
+
+            builder.Entity<CourseCreator>()
+                .HasKey(creator => new { creator.UserId, creator.CourseId });
+
+            builder.Entity<Course>()
+                .HasOne(course => course.Creator)
+                .WithOne(creator => creator.Course)
+                .IsRequired();
+
+            builder.Entity<ApplicationUser>()
+                .HasMany(user => user.CreatedCourses)
+                .WithOne(creator => creator.User)
+                .HasForeignKey(creator => creator.UserId)
+                .IsRequired();
+            
+
         }
     }
 }

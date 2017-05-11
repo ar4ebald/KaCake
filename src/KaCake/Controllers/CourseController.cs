@@ -58,7 +58,8 @@ namespace KaCake.Controllers
 
             try
             {
-                return View(_courseLogic.GetCourse(callerId, id));
+                var courseVm = _courseLogic.GetCourse(callerId, id);
+                return View(courseVm);
             }
             catch(NotFoundException)
             {
@@ -321,6 +322,76 @@ namespace KaCake.Controllers
             try
             {
                 return new ObjectResult(_courseLogic.Edit(callerId, courseId, course));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult CanDeleteCourse(int courseId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                return new ObjectResult(_courseLogic.CanDeleteCourse(userId, courseId));
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("[controller]/[action]/{courseId}")]
+        public IActionResult Delete(int courseId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                if (_courseLogic.Delete(userId, courseId))
+                {
+                    return RedirectToAction(nameof(Index), "Course");
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult DeleteCourse(int courseId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                if (_courseLogic.Delete(userId, courseId))
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
             }
             catch (NotFoundException)
             {

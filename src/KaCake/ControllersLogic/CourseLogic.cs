@@ -70,7 +70,8 @@ namespace KaCake.ControllersLogic
                 Teachers = viewingCourse.Teachers.Select(
                         teacher => KaCakeUtils.createUserInfoViewModel(_context, teacher.TeacherId))
                     .ToList(),
-                IsUserATeacher = viewingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId)
+                IsUserATeacher = viewingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId),
+                CanDeleteThisCourse = CanDeleteCourse(callerId, courseId)
             };
         }
 
@@ -196,6 +197,13 @@ namespace KaCake.ControllersLogic
             _context.Courses.Add(courseToAdd);
             _context.SaveChanges();
 
+            // Then we can set a creator
+            courseToAdd.Creator = new CourseCreator
+            {
+                UserId = callerId,
+                CourseId = courseToAdd.Id
+            };
+            
             // And now the id of the course could be obtained
             CourseTeacher2 courseTeacher = new CourseTeacher2
             {
@@ -207,25 +215,32 @@ namespace KaCake.ControllersLogic
             teachers.Add(courseTeacher);
 
             // Add all the 'Teachers to add'
-            foreach (string teacherToAddId in course.TeachersToAdd)
+            if (course.TeachersToAdd != null)
             {
-                teachers.Add(new CourseTeacher2
+                foreach (string teacherToAddId in course.TeachersToAdd)
                 {
-                    CourseId = courseToAdd.Id,
-                    TeacherId = teacherToAddId,
-                    AppointerId = callerId
-                });
+                    teachers.Add(new CourseTeacher2
+                    {
+                        CourseId = courseToAdd.Id,
+                        TeacherId = teacherToAddId,
+                        AppointerId = callerId
+                    });
+                }
             }
-
-            courseToAdd.Students = course.StudentsToAdd
-                .Select(studentId => new CourseEnrollment
-                {
-                    UserId = studentId,
-                    CourseId = courseToAdd.Id
-                }).ToList();
 
             // Then set the 'teacher' field
             courseToAdd.Teachers = teachers;
+
+            // And the add students
+            if (course.StudentsToAdd != null)
+            {
+                courseToAdd.Students = course.StudentsToAdd
+                    .Select(studentId => new CourseEnrollment
+                    {
+                        UserId = studentId,
+                        CourseId = courseToAdd.Id
+                    }).ToList();
+            }
 
             _context.SaveChanges();
 
@@ -317,6 +332,42 @@ namespace KaCake.ControllersLogic
             {
                 throw new NotFoundException();
             }
+        }
+
+        public bool Delete(string userId, int courseId)
+        {
+            Course course = _context.Courses
+                .Include(c => c.Creator)
+                .FirstOrDefault(c => c.Id == courseId);
+
+            if (course == null)
+            {
+                throw new NotFoundException();
+            }
+            if(!CanDeleteCourse(userId, courseId))
+            {
+                throw new IllegalAccessException();
+            }
+
+            _context.Courses.Remove(course);
+            _context.SaveChanges();
+
+            return true;
+
+        }
+
+        public bool CanDeleteCourse(string userId, int courseId)
+        {
+            var adminRole = _context.Roles
+                        .Include(role => role.Users)
+                        .FirstOrDefault(role => role.Name == RoleNames.Admin);
+
+            var user = _context.Users
+                .Include(u => u.CreatedCourses)
+                .FirstOrDefault(u => u.Id == userId);
+
+            return (user != null && user.CreatedCourses.Any(c => c.CourseId == courseId))
+                || (adminRole != null && adminRole.Users.Any(u => u.UserId == userId));
         }
 
     }
