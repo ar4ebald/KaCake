@@ -26,9 +26,9 @@ namespace KaCake.Controllers
         private readonly IHostingEnvironment _env;
 
         public TaskVariantController(
-            ApplicationDbContext context, 
+            ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager, 
+            RoleManager<IdentityRole> roleManager,
             IHostingEnvironment env)
         {
             _context = context;
@@ -54,7 +54,8 @@ namespace KaCake.Controllers
                     CourseId = variant.TaskGroup.CourseId,
                     CourseName = variant.TaskGroup.Course.Name,
                     AssignmentsCount = variant.Assignments.Count,
-                    IsAssigned = variant.Assignments.Any(assignment => assignment.UserId == userId)
+                    IsAssigned = variant.Assignments.Any(assignment => assignment.UserId == userId),
+                    IsUserTeacher = variant.TaskGroup.Course.Teachers.Any(teacher => teacher.TeacherId == userId)
                 })
                 .FirstOrDefault();
 

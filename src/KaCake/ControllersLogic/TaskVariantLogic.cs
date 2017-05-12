@@ -18,7 +18,7 @@ using KaCake.ViewModels.UserInfo;
 
 namespace KaCake.ControllersLogic
 {
-    public class TaskVariantLogic 
+    public class TaskVariantLogic
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
@@ -33,40 +33,31 @@ namespace KaCake.ControllersLogic
 
         public TaskVariantViewModel GetTaskVariant(string userId, int taskVariantId)
         {
-            TaskVariant taskVariant = _context.TaskVariants
-                .Include(tv => tv.TaskGroup)
-                .Include(tv => tv.TaskGroup.Course)
-                .Include(tv => tv.Assignments)
-                .FirstOrDefault(tv => tv.Id == taskVariantId);
-
-            if (taskVariant == null)
-            {
-                throw new NotFoundException();
-            }
-
-            return new TaskVariantViewModel()
-            {
-                Id = taskVariantId,
-                Name = taskVariant.Name,
-                Description = taskVariant.Description,
-                TaskGroupId = taskVariant.TaskGroupId,
-                TaskGroupName = taskVariant.TaskGroup.Name,
-                CourseId = taskVariant.TaskGroup.CourseId,
-                CourseName = taskVariant.TaskGroup.Course.Name,
-                IsAssigned = taskVariant.Assignments.Any(assignment => assignment.UserId == userId),
-                IsNeedingReview = taskVariant.Assignments.Any(assignment => assignment.ReviewerId == userId),
-                AssignmentsCount = taskVariant.Assignments.Count,
-                Assignments = taskVariant.Assignments
-                    .Select(assignment => new AssignmentViewModel
-                    {
-                        TaskVariantId = taskVariant.Id,
-                        Status = assignment.Status,
-                        Score = assignment.Score,
-                        TaskName = taskVariant.Name,
-                        UserId = assignment.UserId
-                    }).ToList(),
-                IsUserTeacher = KaCakeUtils.IsCourseTeacher(_context, taskVariant.TaskGroup.CourseId, userId)
-            };
+            return _context.TaskVariants
+                       .Where(tv => tv.Id == taskVariantId)
+                       .Select(tv => new TaskVariantViewModel()
+                       {
+                           Id = tv.Id,
+                           Name = tv.Name,
+                           Description = tv.Description,
+                           TaskGroupId = tv.TaskGroupId,
+                           TaskGroupName = tv.TaskGroup.Name,
+                           CourseId = tv.TaskGroup.CourseId,
+                           CourseName = tv.TaskGroup.Course.Name,
+                           IsAssigned = tv.Assignments.Any(assignment => assignment.UserId == userId),
+                           IsNeedingReview = tv.Assignments.Any(assignment => assignment.ReviewerId == userId),
+                           IsUserTeacher = tv.TaskGroup.Course.Teachers.Any(teacher => teacher.TeacherId == userId),
+                           AssignmentsCount = tv.Assignments.Count,
+                           Assignments = tv.Assignments.Select(assignment => new AssignmentViewModel()
+                           {
+                               TaskVariantId = tv.Id,
+                               TaskName = tv.Name,
+                               Status = assignment.Status,
+                               Score = assignment.Score,
+                               UserId = assignment.UserId
+                           }).ToList()
+                       })
+                       .FirstOrDefault() ?? throw new NotFoundException();
         }
 
         public TaskVariantViewModel CreateTaskVariant(string userId, TaskVariantViewModel taskVariant)
@@ -178,7 +169,7 @@ namespace KaCake.ControllersLogic
                     FullName = _context.Users.Find(student.UserId)?.FullName
                 }).ToList();
         }
-        
+
         public bool AddAssignments(string userId, int taskVariantId, AddAsignmentsViewModel viewModel)
         {
             var taskVariant = _context.TaskVariants
