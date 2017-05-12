@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +13,6 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.TaskGroup;
 using KaCake.ViewModels.TaskVariant;
-using Microsoft.AspNetCore.Hosting;
 
 namespace KaCake.Controllers
 {
@@ -23,18 +21,12 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IHostingEnvironment _env;
 
-        public TaskVariantController(
-            ApplicationDbContext context,
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager,
-            IHostingEnvironment env)
+        public TaskVariantController(ApplicationDbContext context, UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
-            _env = env;
         }
 
         [Authorize]
@@ -92,24 +84,11 @@ namespace KaCake.Controllers
         {
             if (ModelState.IsValid)
             {
-                var testerFile = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", taskVariant.Id.ToString()));
-                if (taskVariant.TesterArchive == null)
-                {
-                    if (testerFile.Exists)
-                        testerFile.Delete();
-                }
-                else
-                {
-                    using (var file = testerFile.OpenWrite())
-                        taskVariant.TesterArchive.CopyTo(file);
-                }
-
                 TaskVariant editingTaskVariant;
                 if ((editingTaskVariant = _context.TaskVariants.Find(taskVariant.Id)) != null)
                 {
                     editingTaskVariant.Name = taskVariant.Name;
                     editingTaskVariant.Description = taskVariant.Description;
-
                     _context.SaveChanges();
                 }
                 else
