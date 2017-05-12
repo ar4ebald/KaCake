@@ -86,7 +86,7 @@ namespace KaCake.ControllersLogic
             string commentsPath = path + CommentsFileExtension;
             if (System.IO.File.Exists(commentsPath))
             {
-                new FileViewModel
+                return new FileViewModel
                 {
                     Text = System.IO.File.ReadAllText(path),
                     Comments = System.IO.File.ReadAllText(commentsPath)
@@ -119,14 +119,19 @@ namespace KaCake.ControllersLogic
             {
                 throw new NotFoundException();
             }
-
+            
             string[] commentsFiles = Directory.GetFiles(root, "*" + CommentsFileExtension, SearchOption.AllDirectories);
             List<object> commentsList = new List<object>();
             foreach(string file in commentsFiles)
             {
-                string comments = System.IO.File.ReadAllText(file);
-                var jarr = Newtonsoft.Json.Linq.JArray.Parse(comments);
-                commentsList.AddRange(jarr);
+                string commentsAllText = System.IO.File.ReadAllText(file);
+                var comments = Newtonsoft.Json.JsonConvert.DeserializeObject<IList<CommentViewModel>>(commentsAllText);
+                foreach(var c in comments)
+                {
+                    c.File = file.Substring(root.Length + 1, file.Length - root.Length - CommentsFileExtension.Length - 1);
+                }
+
+                commentsList.AddRange(comments);
             }
             
             return commentsList;
@@ -139,11 +144,6 @@ namespace KaCake.ControllersLogic
                 .Include(s => s.Assignment.TaskVariant)
                 .Include(s => s.Assignment.TaskVariant.TaskGroup)
                 .FirstOrDefault(s => s.Id == submissionId);
-
-            if(!KaCakeUtils.IsCourseTeacher(_context, submission.Assignment.TaskVariant.TaskGroup.CourseId, userId))
-            {
-                throw new IllegalAccessException();
-            }
 
             string root = submission.Path;
 

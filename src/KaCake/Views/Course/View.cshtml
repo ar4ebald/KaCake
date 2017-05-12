@@ -24,7 +24,7 @@
     }
 </div>
 
-<h4>Tasks (@Model.TaskGroups.Count):</h4>
+<h4>Actions:</h4>
 <div class="list-group">
     @if (Model.IsUserATeacher)
     {
@@ -33,8 +33,12 @@
     }
     @if (Model.CanDeleteThisCourse)
     {
-        <a asp-controller="Course" asp-action="Delete" asp-route-id="@Model.Id" class="list-group-item list-group-item-warning"><span class="glyphicon glyphicon-remove"></span> Delete course</a>
+        <a asp-controller="Course" asp-action="Delete" asp-route-id="@Model.Id" class="list-group-item list-group-item-danger active"><span class="glyphicon glyphicon-remove"></span> Delete course</a>
     }
+</div>
+
+<h4>Tasks (@Model.TaskGroups.Count):</h4>
+<div class="list-group">
     @foreach (var taskGroup in Model.TaskGroups)
     {
         <a asp-controller="TaskGroup" asp-action="View" asp-route-id="@taskGroup.Id" class="list-group-item">@taskGroup.Name</a>

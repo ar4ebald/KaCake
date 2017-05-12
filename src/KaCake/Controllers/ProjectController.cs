@@ -100,6 +100,7 @@ namespace KaCake.Controllers
         }
 
         [Authorize]
+        [Route("[controller]/[action]/{submissionId}")]
         public IActionResult GetAllComments(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
@@ -132,7 +133,8 @@ namespace KaCake.Controllers
         }
         
         [Authorize]
-        public IActionResult SaveComments(int submissionId, string file, string commentsJson)
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult SaveComments(int submissionId, [FromQuery] string file, [FromQuery] string commentsJson)
         {
             string userId = _userManager.GetUserId(HttpContext.User);
 
