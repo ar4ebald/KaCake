@@ -37,10 +37,10 @@ namespace KaCake.Controllers
             if (submission == null)
                 return NoContent();
 
-            //submission.PickedForTestingTimeUtc = DateTime.UtcNow;
-            //submission.Status = TestingStatus.Testing;
+            submission.PickedForTestingTimeUtc = DateTime.UtcNow;
+            submission.Status = TestingStatus.Testing;
 
-            //_context.SaveChanges();
+            _context.SaveChanges();
 
             return Json(new
             {
