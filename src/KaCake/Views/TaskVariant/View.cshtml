@@ -2,7 +2,6 @@
 
 @{
     ViewData["Title"] = "Variant - " + Model.Name;
-    bool isAdmin = User.IsInRole(RoleNames.Admin);
 }
 
 <h2>
@@ -20,7 +19,7 @@
         <a asp-controller="Assignment" asp-action="View" asp-route-id="@Model.Id" class="btn btn-default">View your assignment</a>
     }
     <a asp-controller="Assignment" asp-action="Index" asp-route-id="@Model.Id" class="btn btn-default">View assignments</a>
-    @if (isAdmin)
+    @if (Model.IsUserTeacher)
     {
         <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
             Add or remove assignments (@Model.AssignmentsCount)

@@ -13,7 +13,7 @@
 <p>Status: @Model.Status @(Model.Status == ReviewStatus.Graded ? Model.Score.ToString(CultureInfo.InvariantCulture) : "")</p>
 
 <h4>Submissions:</h4>
-<form asp-controller="Assignment" asp-action="AddSubmission" Method="post" enctype="multipart/form-data" class="form-inline">
+<form asp-controller="Assignment" asp-action="AddSubmission_view" Method="post" enctype="multipart/form-data" class="form-inline">
     <div class="list-group">
         <div class="list-group-item">
             <div asp-validation-summary="All" class="text-danger"></div>

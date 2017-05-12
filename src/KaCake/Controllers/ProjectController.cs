@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Project;
+using KaCake.Utils;
+using KaCake.ControllersLogic;
 
 // For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -21,159 +23,159 @@ namespace KaCake.Controllers
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        private readonly ProjectLogic _projectLogic;
+
         public ProjectController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
             _userManager = userManager;
+
+            _projectLogic = new ProjectLogic(context, userManager);
         }
 
         [Authorize]
-        public IActionResult Index(int id)
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult Index(int submissionId)
         {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
+            string userId = _userManager.GetUserId(User);
 
-            if (!User.IsInRole(RoleNames.Admin))
+            try
             {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+                var viewModel = _projectLogic.GetProject(userId, submissionId);
+                return View(viewModel);
             }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
 
-            var viewModel = submissions
-                .Select(submission => new
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult GetProject(int submissionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                return new ObjectResult(_projectLogic.GetProject(userId, submissionId));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Authorize]
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult GetFile(int submissionId, [FromQuery]string file)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                var fileVm = _projectLogic.GetFileContent(userId, submissionId, file);
+                return Json(fileVm);
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}/{file}")]
+        public IActionResult GetFileContent(int submissionId, string file)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                return new ObjectResult(_projectLogic.GetFileContent(userId, submissionId, file));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Authorize]
+        public IActionResult GetAllComments(int submissionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                var commentsList = _projectLogic.GetAllComments(userId, submissionId);
+                return Json(commentsList);
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{submissionId}")]
+        public IActionResult GetAllProjectComments(int submissionId)
+        {
+            string userId = _userManager.GetUserId(User);
+
+            try
+            {
+                return new ObjectResult(_projectLogic.GetAllComments(userId, submissionId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+        }
+        
+        [Authorize]
+        public IActionResult SaveComments(int submissionId, string file, string commentsJson)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+
+            try
+            {
+                if (_projectLogic.SaveComments(userId, submissionId, file, commentsJson))
                 {
-                    RootPath = submission.Path,
-                    Model = new IndexViewModel()
-                    {
-                        UserName = submission.Assignment.User.FullName,
-                        TaskGroupName = submission.Assignment.TaskVariant.TaskGroup.Name,
-                        TaskVariantName = submission.Assignment.TaskVariant.Name,
-                        SubmissionTime = submission.Time,
-                        SubmissionId = submission.Id
-                    }
-                }).FirstOrDefault();
-
-            if (viewModel == null)
-                return NotFound();
-
-            viewModel.Model.Root = GetEntires(new DirectoryInfo(viewModel.RootPath));
-
-            return View(viewModel.Model);
-        }
-
-        [Authorize]
-        public IActionResult GetFile(int id, [FromQuery]string file)
-        {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
-
-            if (!User.IsInRole(RoleNames.Admin))
-            {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
-            }
-
-            string root = submissions
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
-
-            if (root == null || file == null)
-                return NotFound();
-
-            string path = Path.Combine(root, file);
-            if (!System.IO.File.Exists(path))
-                return NotFound();
-
-            string commentsPath = path + CommentsFileExtension;
-            if (System.IO.File.Exists(commentsPath))
-            {
-                return Json(new
+                    return Ok();
+                }
+                else
                 {
-                    Text = System.IO.File.ReadAllText(path),
-                    Comments = System.IO.File.ReadAllText(commentsPath)
-                });
+                    return StatusCode(500);
+                }
             }
-
-            return Json(new
+            catch(NotFoundException)
             {
-                Text = System.IO.File.ReadAllText(path)
-            });
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
 
+        [HttpPost]
         [Authorize]
-        public IActionResult GetAllComments(int id)
+        [Route("api/[controller]/[action]/{submissionId}/{file}")]
+        public IActionResult SaveFileComments(int submissionId, string file, [FromQuery] string commentsJson)
         {
-            var submissions = _context.Submissions
-                .Where(submission => submission.Id == id);
+            string userId = _userManager.GetUserId(User);
 
-            if (!User.IsInRole(RoleNames.Admin))
+            try
             {
-                string userId = _userManager.GetUserId(User);
-                submissions = submissions.Where(submission => submission.Assignment.UserId == userId);
+                return new ObjectResult(_projectLogic.SaveComments(userId, submissionId, file, commentsJson));
             }
-
-            string root = submissions
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
-
-            if(root == null)
+            catch (NotFoundException)
             {
                 return NotFound();
             }
-
-            if(!System.IO.Directory.Exists(root))
+            catch(IllegalAccessException)
             {
-                return NotFound();
+                return Challenge();
             }
-
-            string[] commentsFiles = Directory.GetFiles(root, "*" + CommentsFileExtension, SearchOption.AllDirectories);
-            List<object> commentsList = new List<object>();
-            foreach(string file in commentsFiles)
-            {
-                string comments = System.IO.File.ReadAllText(file);
-                var jarr = Newtonsoft.Json.Linq.JArray.Parse(comments);
-                commentsList.AddRange(jarr);
-            }
-            
-            return Json(commentsList);
-        }
-
-        [Authorize(Roles = RoleNames.Admin)]
-        public IActionResult SaveComments(int id, string file, string commentsJson)
-        {
-            string root = _context.Submissions
-                .Where(submission => submission.Id == id)
-                .Select(submission => submission.Path)
-                .FirstOrDefault();
-
-            if (root == null || file == null || commentsJson == null)
-                return NotFound();
-
-            string path = Path.Combine(root, file);
-            if (!System.IO.File.Exists(path))
-                return NotFound();
-
-            string jsonPath = path + CommentsFileExtension;
-            System.IO.File.WriteAllText(jsonPath, commentsJson);
-
-            return Ok();
-        }
-
-        private static IndexViewModel.FileSystemEntry GetEntires(DirectoryInfo directory)
-        {
-            return new IndexViewModel.FileSystemEntry()
-            {
-                Name = directory.Name,
-                IsDirectory = true,
-                SubEntries = directory.EnumerateDirectories()
-                    .Select(GetEntires)
-                    .Concat(directory.EnumerateFiles().Where(file => !file.Name.EndsWith(CommentsFileExtension)).Select(file => new IndexViewModel.FileSystemEntry()
-                    {
-                        Name = Path.GetFileName(file.Name),
-                        IsDirectory = false
-                    }))
-                    .ToList()
-            };
         }
     }
 }

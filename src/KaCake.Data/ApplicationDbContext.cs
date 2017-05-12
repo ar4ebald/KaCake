@@ -11,7 +11,7 @@ namespace KaCake.Data
         public DbSet<TaskVariant> TaskVariants { get; set; }
         public DbSet<Assignment> Assignments { get; set; }
         public DbSet<Submission> Submissions { get; set; }
-
+        
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
@@ -71,6 +71,40 @@ namespace KaCake.Data
                 .HasMany(assignment => assignment.Submissions)
                 .WithOne(submission => submission.Assignment)
                 .IsRequired();
+
+            // CourseTeacher key definition
+            builder.Entity<CourseTeacher2>()
+                .HasKey(courseTeacher => new { courseTeacher.CourseId, courseTeacher.TeacherId });
+
+            // Course to CourseTeacher as one-to-many
+            builder.Entity<Course>()
+                .HasMany(course => course.Teachers)
+                .WithOne(teacher => teacher.Course)
+                .HasForeignKey(teacher => teacher.CourseId)
+                .IsRequired();
+
+            // ApplicationUser to CourseTeacher as one-to-many relation
+            builder.Entity<ApplicationUser>()
+                .HasMany(user => user.TeachingCourses)
+                .WithOne(teacher => teacher.Teacher)
+                .HasForeignKey(teacher => teacher.TeacherId)
+                .IsRequired();
+
+            builder.Entity<CourseCreator>()
+                .HasKey(creator => new { creator.UserId, creator.CourseId });
+
+            builder.Entity<Course>()
+                .HasOne(course => course.Creator)
+                .WithOne(creator => creator.Course)
+                .IsRequired();
+
+            builder.Entity<ApplicationUser>()
+                .HasMany(user => user.CreatedCourses)
+                .WithOne(creator => creator.User)
+                .HasForeignKey(creator => creator.UserId)
+                .IsRequired();
+            
+
         }
     }
 }

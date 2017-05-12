@@ -17,6 +17,8 @@ namespace KaCake.ViewModels.Project
 
         public FileSystemEntry Root { get; set; }
 
+        public bool IsCourseTeacher { get; set; }
+
         public class FileSystemEntry
         {
             public bool IsDirectory { get; set; }

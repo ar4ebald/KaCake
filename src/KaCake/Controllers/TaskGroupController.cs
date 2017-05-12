@@ -11,32 +11,59 @@ using KaCake.Data;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Assignment;
 using KaCake.ViewModels.TaskVariant;
+using KaCake.Utils;
+using Microsoft.AspNetCore.Identity;
+using KaCake.ControllersLogic;
 
 namespace KaCake.Controllers
 {
     public class TaskGroupController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public TaskGroupController(ApplicationDbContext context)
+        private readonly TaskGroupLogic _taskGroupLogic;
+
+        public TaskGroupController(ApplicationDbContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
+
+            _taskGroupLogic = new TaskGroupLogic(context, userManager);
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{taskGroupId}")]
+        public IActionResult GetTaskGroup(int taskGroupId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskGroupLogic.GetTaskGroup(userId, taskGroupId));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int id, int? taskGroupId)
         {
-            TaskGroup editingGroup;
-            if (taskGroupId.HasValue && (editingGroup = _context.TaskGroups.Find(taskGroupId.Value)) != null)
+            if (taskGroupId.HasValue)
             {
-                return View(new TaskGroupViewModel()
+                try
                 {
-                    CourseId = id,
-                    Id = taskGroupId.Value,
-                    Name = editingGroup.Name,
-                    Description = editingGroup.Description
-                });
+                    return View(_taskGroupLogic.GetTaskGroup(_userManager.GetUserId(User), taskGroupId.Value));
+                }
+                catch(NotFoundException)
+                {
+                    return NotFound();
+                }
             }
 
             return View(new TaskGroupViewModel()
@@ -45,29 +72,83 @@ namespace KaCake.Controllers
             });
         }
 
+        [Authorize]
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Route("api/[controller]/[action]")]
+        public IActionResult CreateTaskGroup([FromBody] TaskGroupViewModel taskGroup)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskGroupLogic.CreateTaskGroup(userId, taskGroup));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("api/[controller]/[action]/{taskGroupId}")]
+        public IActionResult EditTaskGroup(int taskGroupId, [FromBody] TaskGroupViewModel taskGroup)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskGroupLogic.EditTaskGroup(userId, taskGroupId, taskGroup));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [HttpPost]
         public IActionResult Create(TaskGroupViewModel taskGroup)
         {
+            string userId = _userManager.GetUserId(HttpContext.User);
+
             if (ModelState.IsValid)
             {
                 TaskGroup editedTaskGroup;
                 if ((editedTaskGroup = _context.TaskGroups.Find(taskGroup.Id)) != null)
                 {
-                    editedTaskGroup.Name = taskGroup.Name;
-                    editedTaskGroup.Description = taskGroup.Description;
-                    _context.SaveChanges();
+                    try
+                    {
+                        taskGroup = _taskGroupLogic.EditTaskGroup(userId, taskGroup.Id, taskGroup);
+                    }
+                    catch (NotFoundException)
+                    {
+                        return NotFound();
+                    }
+                    catch (IllegalAccessException)
+                    {
+                        return Challenge();
+                    }
                 }
                 else
                 {
-                    var entry = _context.TaskGroups.Add(new TaskGroup()
+                    try
                     {
-                        CourseId = taskGroup.CourseId,
-                        Name = taskGroup.Name,
-                        Description = taskGroup.Description
-                    });
-                    _context.SaveChanges();
-                    taskGroup.Id = entry.Entity.Id;
+                        taskGroup = _taskGroupLogic.CreateTaskGroup(userId, taskGroup);
+                    }
+                    catch (NotFoundException)
+                    {
+                        return NotFound();
+                    }
+                    catch (IllegalAccessException)
+                    {
+                        return Challenge();
+                    }
                 }
 
                 return RedirectToAction("View", new { id = taskGroup.Id });
@@ -79,28 +160,21 @@ namespace KaCake.Controllers
         [Authorize]
         public IActionResult View(int id)
         {
-            var viewModel = _context.TaskGroups
-                .Where(taskGroup => taskGroup.Id == id)
-                .Select(taskGroup => new TaskGroupViewModel()
-                {
-                    Id = taskGroup.Id,
-                    CourseId = taskGroup.CourseId,
-                    CourseName = taskGroup.Course.Name,
-                    Name = taskGroup.Name,
-                    Description = taskGroup.Description,
-                    Variants = taskGroup.Variants.Select(variant => new TaskVariantViewModel()
-                    {
-                        Id = variant.Id,
-                        Name = variant.Name,
-                        Description = variant.Description
-                    }).ToList()
-                })
-                .FirstOrDefault();
+            string userId = _userManager.GetUserId(HttpContext.User);
 
-            if (viewModel == null)
+            try
+            {
+                var viewModel = _taskGroupLogic.GetTaskGroup(userId, id);
+                return View(viewModel);
+            }
+            catch(NotFoundException)
+            {
                 return NotFound();
-
-            return View(viewModel);
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
     }
 }

@@ -9,12 +9,13 @@ using KaCake.Data.Models;
 namespace KaCake.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20170511170429_CourseCreator")]
+    partial class CourseCreator
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.2")
+                .HasAnnotation("ProductVersion", "1.1.1")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
@@ -167,14 +168,6 @@ namespace KaCake.Data.Migrations
                         .IsRequired();
 
                     b.Property<string>("Path");
-
-                    b.Property<DateTime>("PickedForTestingTimeUtc");
-
-                    b.Property<string>("ReviewMessage");
-
-                    b.Property<string>("ReviewTitle");
-
-                    b.Property<int>("Status");
 
                     b.Property<DateTime>("Time");
 
