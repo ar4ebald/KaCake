@@ -31,13 +31,14 @@ namespace KaCake.Controllers
         }
 
         [Authorize]
-        public IActionResult View(int submssionId)
+        [Route("[controller]/[action]/{submissionId}")]
+        public IActionResult View(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
             try
             {
-                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submssionId);
+                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submissionId);
                 return View(viewModel);
             }
             catch(NotFoundException)
@@ -72,6 +73,7 @@ namespace KaCake.Controllers
         }
 
         [Authorize]
+        [Route("[controller]/[action]/{submissionId}")]
         public IActionResult Delete(int submssionId)
         {
             string userId = _userManager.GetUserId(User);
