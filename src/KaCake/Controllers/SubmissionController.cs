@@ -53,13 +53,13 @@ namespace KaCake.Controllers
 
         [Authorize]
         [Route("api/[controller]/[action]/{submissionId}")]
-        public IActionResult GetAssignment(int submssionId)
+        public IActionResult GetAssignment(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
             try
             {
-                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submssionId);
+                SubmissionViewModel viewModel = _submissionLogic.GetSubmission(userId, submissionId);
                 return new ObjectResult(viewModel);
             }
             catch (NotFoundException)
@@ -74,13 +74,13 @@ namespace KaCake.Controllers
 
         [Authorize]
         [Route("[controller]/[action]/{submissionId}")]
-        public IActionResult Delete(int submssionId)
+        public IActionResult Delete(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
             try
             {
-                int result = _submissionLogic.DeleteSubmssion(userId, submssionId);
+                int result = _submissionLogic.DeleteSubmssion(userId, submissionId);
                 if (result != -1)
                 {
                     return RedirectToAction("View", "Assignment", new { id = result });
@@ -102,13 +102,13 @@ namespace KaCake.Controllers
 
         [Authorize]
         [Route("api/[controller]/[action]/{submissionId}")]
-        public IActionResult DeleteAssignment(int submssionId)
+        public IActionResult DeleteAssignment(int submissionId)
         {
             string userId = _userManager.GetUserId(User);
 
             try
             {
-                int result = _submissionLogic.DeleteSubmssion(userId, submssionId);
+                int result = _submissionLogic.DeleteSubmssion(userId, submissionId);
                 if (result != -1)
                 {
                     return Ok();
