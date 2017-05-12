@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="1.1.1" />
     <PackageReference Include="sharpcompress" Version="0.15.2" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="1.1.1"></PackageReference>
   </ItemGroup>
   
   <ItemGroup>
@@ -37,6 +38,28 @@
     <!--<Content Include="wwwroot"/>
     <Content Include="App_Data"/>-->
   </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="obj\**" />
+    <Content Remove="obj\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <None Remove="obj\**" />
+  </ItemGroup>
+
+  <!--<ItemGroup>
+    <Compile Remove="wwwroot\App_Data\Submissions\8f6f836d-62ed-4e2e-9359-49296d1cd42e\**" />
+    <Compile Remove="wwwroot\App_Data\Testers\**" />
+    <Content Remove="wwwroot\App_Data\Submissions\8f6f836d-62ed-4e2e-9359-49296d1cd42e\**" />
+    <Content Remove="wwwroot\App_Data\Testers\**" />
+    <EmbeddedResource Remove="wwwroot\App_Data\Submissions\8f6f836d-62ed-4e2e-9359-49296d1cd42e\**" />
+    <EmbeddedResource Remove="wwwroot\App_Data\Testers\**" />
+    <None Remove="wwwroot\App_Data\Submissions\8f6f836d-62ed-4e2e-9359-49296d1cd42e\**" />
+    <None Remove="wwwroot\App_Data\Testers\**" />
+  </ItemGroup>-->
+
+  <!--<ItemGroup>
+    <Folder Include="wwwroot\App_Data\Submissions\" />
+  </ItemGroup>-->
 
   <!--<ItemGroup>
     <Compile Remove="wwwroot\**" />
