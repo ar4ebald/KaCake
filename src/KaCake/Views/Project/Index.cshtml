@@ -45,12 +45,11 @@
 
     ViewBag.Title = "Project";
 }
-
 <h2>@Model.TaskGroupName / @Model.TaskVariantName / @Model.UserName (@Model.SubmissionTime)</h2>
 <div id="tree"></div>
 <div id="list"></div>
 <div class="container">
-    <button type="submit" id="save_comments" class="btn btn-default collapse">Save</button>
+    <button type="submit" id="save_comments" class="btn btn-default">Save</button>
 </div>
 
 <div class="navbar-fixed-bottom transpanent-div collapse" id="comment_footer">
@@ -58,32 +57,15 @@
         <div class="row">
             <form>
                 <div class="form-group">
-                    @if (User.IsInRole(RoleNames.Admin))
-                    {
-                        <text>
-                            <label for="comment">Edit your comment</label>
-                        </text>
-                    }
-                    else
-                    {
-                        <text>
-                            <label for="comment">View your comment</label>
-                        </text>
-                    }
-                    <textarea id="comment" rows="5"
-                              @if (!User.IsInRole(RoleNames.Admin)){
-                              <text>disabled</text>
-                              }
-                              ></textarea>
+                    <label for="comment">View and edit a comment</label>
+
+                    <textarea id="comment" rows="5"></textarea>
                 </div>
-                @if (User.IsInRole(RoleNames.Admin))
-                {
-                <text>
-                    <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
-                    <button type="reset" id="remove_comment" class="btn btn-default">Remove comment</button>
-                    <button type="reset" id="cancel_comment" class="btn btn-default">Cancel</button>
-                </text>
-                }
+
+                <button type="submit" id="submit_comment" class="btn btn-default">Submit comment</button>
+                <button type="reset" id="remove_comment" class="btn btn-default">Remove comment</button>
+                <button type="reset" id="cancel_comment" class="btn btn-default">Cancel</button>
+
             </form>
         </div>
     </div>
@@ -97,12 +79,19 @@
     </div>
 </div>
 
-<samp id="output" style="padding: 5px"></samp>
+<div class="navbar-fixed-top alert-success collapse" id="comment_submit_error">
+    <div class="container">
+        <div class="block-message">
+            An error ocurred during saving comments.
+        </div>
+    </div>
+</div>
 
+<samp id="output" style="padding: 5px"></samp>
 <ul class="nav nav-tabs"></ul>
 <div class="tab-content">
 </div>
-
+<div style="height: 300px"></div> <!--Because comments overlays editor-->
 @section scripts
 {
     <script src="https://repl.it/lib/api.js"></script>
@@ -123,21 +112,131 @@
         var editors = {};
         var tabs = {};
         var comment = null;
+        var allComments = [];
         var commentsList = [];
+        var files = [];
 
         var savedVal = "Save";
         var needToSaveVal = "Save *";
 
         var editor;
+        var editorId;
 
-        function writeOutput(text) {
-            console.log(text);
-            $("#output").append(text.replace(/(\r\n|[\n\r])/gi, "<br/>"));
+        // Find the comment
+        // Returns index of the occurence, -1 otherwise
+        var find = function (file, comment) {
+            for (var i = 0; i < comments.length; ++i) {
+                var c = comments[i];
+                if (c.file == file
+                    && c.startRow == comment.startRow
+                    && c.startPosition == comment.startPosition
+                    && c.endRow == comment.endRow
+                    && c.endPosition == comment.endPosition)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        };
+
+        var removeCommentAt = function (i) {
+            var fileName = comments[i].file;
+
+            comments.splice(i, 1);
+
+            for (var j = 0; j < files.length; ++j) {
+                if (files[j] == fileName) {
+                    return;
+                }
+            }
+
+            files.push(fileName);
         }
 
-        var options = { stdout: writeOutput };
+        var updateCommentsList = function () {
+            commentsList = []
 
-        function setupEditor(id, name) {
+            for (var i = 0; i < comments.length; ++i){
+                addToCommentsList(comments[i])
+            }
+
+            console.log("Updating list");
+            $('#list').empty();
+                    $('#list').treeview({
+                    data: commentsList,
+                    onNodeSelected: function (event, data) {
+                        $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.comment.file),
+                            function (result) {
+                                goToTab(data.comment.file, result);
+                                showComment(data.comment);
+                            }
+                        );
+                    }
+                });
+        }
+
+        var showComment = function(c) {
+            comment = c;
+            $('#comment').val(new String(comment.text));
+            showEditComment();
+        }
+
+        var hideComment = function () {
+            hideEditComment();
+        }
+
+        function addToCommentsList(c) {
+            var cmnt = {
+                text: c.text.length > 80 ? c.text.substr(0, 80) + "..." : c.text,
+                icon: "glyphicon glyphicon-comment",
+                backColor: "#b4b3a2",
+                comment: c
+            }
+            commentsList.push(cmnt);
+        }
+
+        function goToTab(filename, filedata) {
+            var a = $(".nav-tabs li").children('a');
+            for (var i = 0; i < a.length; ++i) {
+                console.log(a[i]);
+                var id = $(a[i]).attr('href').substr("#tab_".length);
+                if (tabs[id] == filename) {
+                    $(a[i]).click();
+                    editor = setupEditor("editor_" + id, filename, filedata.text);
+                    return;
+                }
+            }
+
+            createTab(filename, filedata);
+        }
+
+        function createTab(name, data) {
+            var id = $(".nav-tabs").children().length;
+            $(".nav-tabs").append('<li><a href="#tab_' +
+                id +
+                '">' +
+                name +
+                '</a><span class="glyphicon glyphicon-remove"></span></li>');
+            $(".tab-content").append('<div class="tab-pane" id="tab_' +
+                id +
+                '"><div id="editor_' +
+                id +
+                '"></div></div>');
+
+            console.log(data.text);
+            editor = setupEditor("editor_" + id, name, data.text);
+            tabs[id] = name;
+
+            $('.nav-tabs li').children('a').last().click();
+
+            editor.selection.clearSelection();
+
+            $('#comment_footer').collapse("hide");
+        }
+
+        function setupEditor(id, name, dataText) {
+            editorId = id;
             editor = ace.edit(id);
             editor.file = name;
             editors[id] = editor;
@@ -148,86 +247,8 @@
             });
             var mode = modelist.getModeForPath(name).mode;
             editor.session.setMode(mode);
-            editor.commands.addCommand({
-                name: "run",
-                bindKey: { win: "Ctrl-R", mac: "Command-Option-R" },
-                exec: function(editor) {
-                    $("#output").text("");
-                    if (!repl) {
-                        console.log(mode, langNames[mode]);
-                        repl = new ReplitClient('api.repl.it', 80, langNames[mode], token);
-                        repl.connect().then(
-                            function() {
-                                repl.evaluate(editor.getValue(), options).then(function success(result) {
-                                        writeOutput("\nProgram finished\n");
-                                        if (result.error) {
-                                            writeOutput(`Error:\n${result.error}\n`);
-                                        } else if (result.data) {
-                                            writeOutput(`Result:\n${result.data}\n`);
-                                        }
-                                    },
-                                    function(result) {
-                                        alert(result);
-                                    });
-                            },
-                            function() { alert("Error connecting to repl") });
-                    } else
-                        repl.evaluate(editor.getValue(), options);
-                }
-            });
-            editor.commands.addCommand({
-                name: "write",
-                bindKey: { win: "Ctrl-I", mac: "Command-Option-I" },
-                exec: function(editor) {
-                    //writeOutput("\n");
-                    repl.write(prompt("Inter input:") + "\n");
-                }
-            });
-            editor.commands.addCommand({
-                name: "stop",
-                bindKey: { win: "Ctrl-P", mac: "Command-Option-P" },
-                exec: function(editor) {
-                    if (repl) {
-                        repl.stop();
-                        repl = null;
-                    }
-                }
-            });
-            @if (User.IsInRole(RoleNames.Admin))
-            {
-                <text>
-            function save(editor) {
-                $.get("../SaveComments/@Model.SubmissionId?file=" +
-                                encodeURI(editor.file) +
-                                "&commentsJson=" +
-                                encodeURI(JSON.stringify(editor.getSession().getComments())),
-                                function(result) {
-                                    console.log(result);
-                                    $('#comment_submitted_footer').collapse("show");
-                                    $('#save_comments').text(savedVal);
-                                    setTimeout(function () {
-                                        $('#comment_submitted_footer').collapse("hide");
-                                    }, 3000);
-                                });
-            };
-                    editor.commands.addCommand({
-                        name: "save",
-                        bindKey: { win: "Ctrl-S", mac: "Command-Option-S" },
-                        exec: function (editor) {
-                            save(editor);
-                        }
-            });
 
-                    $('body').on("click", '#save_comments', function (e) {
-                        save(editor);
-                    });
-
-                    $('#save_comments').collapse("show");
-
-                </text>
-            }
-
-            function generateUUID() {
+            var generateUUID = function() {
                 var d = new Date().getTime();
                 var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,
                     function(c) {
@@ -238,124 +259,204 @@
                 return uuid;
             };
 
-            $('body').on('click',
-                '#submit_comment',
-                function (e) {
-                    e.preventDefault();
+            var editorComments = [];
+            for (var i = 0; i < comments.length; ++i) {
+                var c = comments[i];
+                if (c.file != editor.file) {
+                    continue;
+                }
 
-                    if (comment) {
-                        comment.text = new String($('#comment').val());
-                        $('#remove_comment').hide();
-                        $('#comment_footer').collapse("hide");
-                        comment = null;
-                        $('#comment').val("");
-                        return;
-                    }
+                var ec = new Object();
 
-                    var selectionRange = editor.getSelection().getRange();
+                ec.startRow = c.startRow;
+                ec.startPosition = c.startPosition;
+                ec.endRow = c.endRow;
+                ec.endPosition = c.endPosition;
+                ec.text = c.text;
+                ec.file = c.file;
 
-                    comment = new Object();
+                ec.uuid = generateUUID();
 
-                    comment.startRow = selectionRange.start.row;
-                    comment.startPosition = selectionRange.start.column;
-                    comment.endRow = selectionRange.end.row;
-                    comment.endPosition = selectionRange.end.column;
-                    comment.text = new String($("#comment").val());
-                    comment.file = editor.file;
-
-                    comment.uuid = generateUUID();
-
-                    addToCommentsList(comment);
-                    updateComments();
-
-                    editor.getSession().addComment(comment);
-
-                    editor.setValue(editor.getValue());
-                    editor.getSelection().setSelectionRange(selectionRange);
-
-                    $('#comment_footer').collapse("hide");
-
-                    comment = null;
-                    $('#comment').val("");
-                    
-                    $('#save_comments').text(needToSaveVal);
-                });
-            $('body').on('click',
-                '#remove_comment',
-                function(e) {
-                    e.preventDefault();
-
-                    if (!comment) {
-                        return;
-                    }
-
-                    var uuid = comment.uuid;
-                    editor.getSession().removeComment(comment);
-                    editor.setValue(editor.getValue());
-                    editor.getSelection().clearSelection();
-                    $('#remove_comment').hide();
-                    $('#comment_footer').collapse("hide");
-                    comment = null;
-                    $('#comment').val("");
-
-                    for (var i = 0; i < commentsList.length; ++i) {
-                        if (commentsList[i].comment.uuid == uuid) {
-                            commentsList.splice(i, 1);
-                            break;
-                        }
-                    }
-                    updateComments();
-                    $('#save_comments').text(needToSaveVal);
-                });
+                editor.getSession().addComment(ec);
+            }
 
             editor.getSession().selection.on('changeSelection',
                 function(e) {
                     if (!editor.getSelection().isEmpty()) {
-                        $('#comment_footer').collapse("show");
+                        editNewComment(editor.file, editor.getSelection().getRange());
                     } else {
-                        $('#remove_comment').hide();
-                        $('#comment_footer').collapse("hide");
-                        comment = null;
-                        $('#comment').val("");
+                        hideEditComment();
                     }
                 });
 
-            $('body').on('mouseenter',
-                '.kacake_comment',
-                function(event) {
-                    console.log($(this).attr('data-comment-uuid'));
-                });
-
-            $('body').on('click',
-                '.kacake_comment',
-                function(event) {
-                    var comment_uuid = $(this).attr('data-comment-uuid');
-                    comment = editor.getSession().getComment(comment_uuid);
-                    $('#comment').val(new String(comment.text));
-                    $('#comment_footer').collapse("show");
-                    $('#remove_comment').show();
-                });
-
-            $('body').on('click',
-                '#cancel_comment',
-                function() {
-                    $('#remove_comment').hide();
-                    $('#comment_footer').collapse("hide");
-                    comment = null;
-                    $('#comment').val("");
-                });
+            editor.setValue(dataText);
 
             return editor;
         }
 
+        function updateEditor() {
+            editor = setupEditor(editorId, editor.file, editor.getValue());
+            editor.clearSelection();
+        }
+
+        function editNewComment(filename, selectionRange) {
+            comment = new Object();
+
+            comment.file = filename;
+            comment.startRow = selectionRange.start.row;
+            comment.startPosition = selectionRange.start.column;
+            comment.endRow = selectionRange.end.row;
+            comment.endPosition = selectionRange.end.column;
+
+            showEditComment();
+            $('#remove_comment').collapse("hide");
+        }
+
+        function showEditComment() {
+            $('#comment_footer').collapse("show");
+
+            $('#submit_comment').collapse("show");
+            $('#cancel_comment').collapse("show");
+        }
+
+        function hideEditComment() {
+            $("#comment").val('');
+            $('#comment_footer').collapse("hide");
+
+            comment = null;
+        }
+
+        function saveAllComments() {
+            console.log("saving");
+            console.log(comments);
+
+            var commentsToSave = {};
+            var filesToSave = [];
+
+            for (var i = 0; i < comments.length; ++i) {
+                var c = comments[i];
+
+                var file = c.file;
+                if (!commentsToSave[file]) {
+                    commentsToSave[file] = [];
+                    filesToSave.push(file);
+                }
+
+                var commentToPush = new Object();
+
+                commentToPush.startRow = c.startRow;
+                commentToPush.startPosition = c.startPosition;
+                commentToPush.endRow = c.endRow;
+                commentToPush.endPosition = c.endPosition;
+                commentToPush.text = c.text;
+
+                commentsToSave[file].push(commentToPush);
+            }
+
+            var counter = 0;
+            
+            var emptyFiles = [];
+            for (var i = 0; i < files.length; ++i) {
+                if (!commentsToSave[files[i]]) {
+                    emptyFiles.push(files[i]);
+                }
+            }
+
+            var callSave = function (file, commentsToSave) {
+                $.get("../SaveComments/@Model.SubmissionId?file=" +
+                                encodeURI(file) +
+                    "&commentsJson=" +
+                        encodeURI(JSON.stringify(commentsToSave)),
+                    function (result) {
+                        counter++;
+                        if (counter == filesToSave.length + emptyFiles.length) {
+                            console.log(result);
+                            $('#comment_submitted_footer').collapse("show");
+                            $('#save_comments').text(savedVal);
+                            setTimeout(function () {
+                                $('#comment_submitted_footer').collapse("hide");
+                            }, 3000);
+                        }
+                    }
+                ).fail(function(){
+                    $('#comment_submit_error').collapse("show");
+                    setTimeout(function () {
+                        $('#comment_submit_error').collapse("hide");
+                    }, 3000);
+                });
+            }
+
+            for (var i = 0; i < filesToSave.length; ++i) {
+                var file = filesToSave[i];
+                callSave(file, commentsToSave[file]);
+            }
+
+            for (var i = 0; i < emptyFiles.length; ++i) {
+                callSave(emptyFiles[i], []);
+            }
+        }
+
+        $('body').on('click',
+            '#submit_comment',
+            function (e) {
+                e.preventDefault();
+
+                var exist = (find(comment.file, comment) != -1);
+
+                comment.text = new String($("#comment").val());
+
+                if (!exist) {
+                    comments.push(comment);
+                }
+
+                updateCommentsList();
+                updateEditor();
+
+                $('#save_comments').text(needToSaveVal);
+                hideComment();
+            });
+        $('body').on('click',
+            '#remove_comment',
+            function (e) {
+                e.preventDefault();
+
+                if (!comment) {
+                    return;
+                }
+
+                var i = find(comment.file, comment);
+                if (i != -1) {
+                    removeCommentAt(i);
+                }
+
+                updateCommentsList();
+                updateEditor();
+
+                $('#save_comments').text(needToSaveVal);
+            });
+
+        $('body').on('click',
+            '.kacake_comment',
+            function (event) {
+                var comment_uuid = $(this).attr('data-comment-uuid');
+                var editorComment = editor.getSession().getComment(comment_uuid);
+
+                var i = find(editor.file, editorComment);
+                if (i != -1) {
+                    comment = comments[i];
+                    showComment(comment);
+                }
+            });
+
+        $('body').on('click',
+            '#cancel_comment',
+            function () {
+                hideComment();
+            });
+
         $(".nav-tabs").on("click",
                 "a",
                 function(e) {
-                    if (repl) {
-                        repl.stop();
-                        repl.disconnect();
-                        repl = null;
-                    }
                     e.preventDefault();
                     console.log($(this));
                     $(this).tab('show');
@@ -373,94 +474,20 @@
                     $(this).parent().remove();
                     $(".nav-tabs li").children('a').first().click();
                     delete tabs[id];
-
-                    if ($(".nav-tabs").children().length == 0) {
-                        $('#save_comments').collapse("hide");
-                    }
                 });
 
-        function createTab(name, data) {
-            var id = $(".nav-tabs").children().length;
-            $(".nav-tabs").append('<li><a href="#tab_' +
-                id +
-                '">' +
-                name +
-                '</a><span class="glyphicon glyphicon-remove"></span></li>');
-            $(".tab-content").append('<div class="tab-pane" id="tab_' +
-                id +
-                '"><div id="editor_' +
-                id +
-                '"></div></div>');
-
-            console.log(data.text);
-            var editor = setupEditor("editor_" + id, name);
-            editor.setValue(data.text);
-            if (data.comments) {
-                var comments = JSON.parse(data.comments);
-                for (var i in comments) {
-                    editor.getSession().addComment(comments[i]);
-                    console.log(comments[i]);
-                }
+        $('body').on('click',
+            "#save_comments",
+            function (e) {
+                console.log("save click");
+                saveAllComments();
             }
-            editors[id] = editor;
-            tabs[id] = name;
-
-            $('.nav-tabs li').children('a').last().click();
-
-            editor.selection.clearSelection();
-
-            $('#comment_footer').collapse("hide");
-        }
-
-        function goToTab(filename, file) {
-            var a = $(".nav-tabs li").children('a');
-            for (var i = 0; i < a.length; ++i) {
-                console.log(a[i]);
-                var id = $(a[i]).attr('href').substr("#tab_".length);
-                if (tabs[id] == filename) {
-                    $(a[i]).click();
-                    editor = editors[id];
-                    return;
-                }
-            }
-
-            createTab(filename, file);
-        }
-
-        function updateComments() {
-            console.log("Updating list");
-            $('#list').empty();
-                    $('#list').treeview({
-                    data: commentsList,
-                    onNodeSelected: function (event, data) {
-                        $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.comment.file),
-                            function (result) {
-                                goToTab(data.comment.file, result);
-                                var comment_uuid = data.comment.uuid;
-                                comment = editor.getSession().getComment(comment_uuid);
-                                $('#comment').val(new String(comment.text));
-                                $('#comment_footer').collapse("show");
-                                $('#remove_comment').show();
-                            }
-                        );
-                    }
-                });
-
-        }
-
-        function addToCommentsList(c) {
-            var cmnt = {
-                text: c.text.length > 80 ? c.text.substr(0, 80) + "..." : c.text,
-                icon: "glyphicon glyphicon-comment",
-                backColor: "#b4b3a2",
-                comment: c
-            }
-            commentsList.push(cmnt);
-        }
+        );
 
         $('#tree').treeview({
             data: tree,
             onNodeSelected: function (event, data) {
+                console.log("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file));
                 $.get("../GetFile/@Model.SubmissionId?file=" + encodeURI(data.file),
                     function (result) {
                         goToTab(data.file, result);
@@ -471,12 +498,8 @@
 
         $.get("../GetAllComments/@Model.SubmissionId",
             function (result) {
-                for (var i = 0; i < result.length; ++i) {
-                    var c = result[i];
-                    addToCommentsList(c);
-                }
-
-                updateComments();
+                comments = result;
+                updateCommentsList();
             }
         );
 

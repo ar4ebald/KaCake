@@ -4,6 +4,8 @@ namespace KaCake.ViewModels.Account
 {
     public class LoginViewModel
     {
+        public string ReturnURL { get; set; }
+
         [Required]
         [EmailAddress]
         public string Email { get; set; }

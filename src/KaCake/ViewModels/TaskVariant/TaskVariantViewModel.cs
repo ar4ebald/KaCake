@@ -27,14 +27,16 @@ namespace KaCake.ViewModels.TaskVariant
 
         public string Description { get; set; }
 
-
         public bool IsAssigned { get; set; }
 
+        public bool IsNeedingReview { get; set; }
 
         public int AssignmentsCount { get; set; }
 
         public ICollection<AssignmentViewModel> Assignments { get; set; }
 
         public IFormFile TesterArchive { get; set; }
+
+        public bool IsUserTeacher { get; set; }
     }
 }

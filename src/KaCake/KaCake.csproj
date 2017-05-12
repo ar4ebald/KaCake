@@ -25,6 +25,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="1.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.BrowserLink" Version="1.1.2" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="1.1.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="1.1.1" />
     <PackageReference Include="sharpcompress" Version="0.15.2" />
   </ItemGroup>
   
@@ -33,9 +34,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="**\*.cs" Exclude="wwwroot\**\*" />
-    <!--<Content Include="wwwroot"/>
-    <Content Include="App_Data"/>-->
+    <Compile Include="*.cs" />
+    <Compile Include="Controllers\*.cs" />
+    <Compile Include="Services\*.cs" />
+    <Compile Include="ViewModels\**\*.cs" />
+    <Compile Include="ControllersLogic\*.cs" />
+    <Compile Include="Utils\*.cs" />
   </ItemGroup>
 
   <!--<ItemGroup>

@@ -15,6 +15,8 @@ using KaCake.Data.Models;
 using KaCake.ViewModels.TaskGroup;
 using KaCake.ViewModels.TaskVariant;
 using Microsoft.AspNetCore.Hosting;
+using KaCake.Utils;
+using KaCake.ControllersLogic;
 
 namespace KaCake.Controllers
 {
@@ -24,50 +26,66 @@ namespace KaCake.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IHostingEnvironment _env;
-
+        private readonly TaskVariantLogic _taskVariantLogic;
+        
         public TaskVariantController(
             ApplicationDbContext context, 
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager, 
-            IHostingEnvironment env)
-        {
+            IHostingEnvironment env){
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+
             _env = env;
+
+            _taskVariantLogic = new TaskVariantLogic(context, userManager, roleManager);
         }
 
         [Authorize]
         public IActionResult View(int id)
         {
-            string userId = _userManager.GetUserId(User);
-
-            var model = _context.TaskVariants
-                .Where(variant => variant.Id == id)
-                .Select(variant => new TaskVariantViewModel
-                {
-                    Id = variant.Id,
-                    Name = variant.Name,
-                    Description = variant.Description,
-                    TaskGroupId = variant.TaskGroupId,
-                    TaskGroupName = variant.TaskGroup.Name,
-                    CourseId = variant.TaskGroup.CourseId,
-                    CourseName = variant.TaskGroup.Course.Name,
-                    AssignmentsCount = variant.Assignments.Count,
-                    IsAssigned = variant.Assignments.Any(assignment => assignment.UserId == userId)
-                })
-                .FirstOrDefault();
-
-            if (model == null)
+            try
+            {
+                string userId = _userManager.GetUserId(User);
+                TaskVariantViewModel viewModel = _taskVariantLogic.GetTaskVariant(userId, id);
+                return View(viewModel);
+            }
+            catch(NotFoundException)
+            {
                 return NotFound();
+            }
+        }
 
-            return View(model);
+        [Authorize]
+        [Route("api/[controller]/[action]/{taskVariantId}")]
+        public IActionResult GetTaskVariant(int taskVariantId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.GetTaskVariant(userId, taskVariantId));
+            }
+            catch(NotFoundException)
+            {
+                return NotFound();
+            }
+            catch(IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult Create(int id, int? taskVariantId)
         {
+            string userId = _userManager.GetUserId(User);
+            TaskGroup taskGroup = _context.TaskGroups.Find(id);
+            if(!KaCakeUtils.IsCourseTeacher(_context, taskGroup.CourseId, userId))
+            {
+                return Challenge();
+            }
+
             TaskVariant editingTaskVariant;
             if (taskVariantId.HasValue && (editingTaskVariant = _context.TaskVariants.Find(taskVariantId.Value)) != null)
             {
@@ -76,19 +94,62 @@ namespace KaCake.Controllers
                     TaskGroupId = id,
                     Id = taskVariantId.Value,
                     Name = editingTaskVariant.Name,
-                    Description = editingTaskVariant.Description
+                    Description = editingTaskVariant.Description,
+                    IsUserTeacher = KaCakeUtils.IsCourseTeacher(_context, editingTaskVariant.TaskGroup.CourseId, userId)
                 });
             }
             return View(new TaskVariantViewModel
             {
-                TaskGroupId = id
+                TaskGroupId = id,
+                IsUserTeacher = KaCakeUtils.IsCourseTeacher(_context, _context.TaskGroups.Find(id).CourseId, userId)
             });
         }
 
+        [Authorize]
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
+        [Route("api/[controller]/[action]")]
+        public IActionResult CreateTaskVariant([FromBody] TaskVariantViewModel taskVariant)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.CreateTaskVariant(userId, taskVariant));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("api/[controller]/[action]/{taskVariantId}")]
+        public IActionResult EditTaskVariant(int taskVariantId, [FromBody] TaskVariantViewModel taskVariant)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.EditTaskVariant(userId, taskVariantId, taskVariant));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [HttpPost]
         public IActionResult Create(TaskVariantViewModel taskVariant)
         {
+            string userId = _userManager.GetUserId(User);
+
             if (ModelState.IsValid)
             {
                 var testerFile = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", taskVariant.Id.ToString()));
@@ -106,21 +167,33 @@ namespace KaCake.Controllers
                 TaskVariant editingTaskVariant;
                 if ((editingTaskVariant = _context.TaskVariants.Find(taskVariant.Id)) != null)
                 {
-                    editingTaskVariant.Name = taskVariant.Name;
-                    editingTaskVariant.Description = taskVariant.Description;
-
-                    _context.SaveChanges();
+                    try
+                    {
+                        taskVariant = _taskVariantLogic.EditTaskVariant(userId, taskVariant.Id, taskVariant);
+                    }
+                    catch(NotFoundException)
+                    {
+                        return NotFound();
+                    }
+                    catch(IllegalAccessException)
+                    {
+                        Challenge();
+                    }
                 }
                 else
                 {
-                    var entity = _context.TaskVariants.Add(new TaskVariant()
+                    try
                     {
-                        TaskGroupId = taskVariant.TaskGroupId,
-                        Name = taskVariant.Name,
-                        Description = taskVariant.Description
-                    });
-                    _context.SaveChanges();
-                    taskVariant.Id = entity.Entity.Id;
+                        taskVariant = _taskVariantLogic.CreateTaskVariant(userId, taskVariant);
+                    }
+                    catch (NotFoundException)
+                    {
+                        return NotFound();
+                    }
+                    catch (IllegalAccessException)
+                    {
+                        Challenge();
+                    }
                 }
                 return RedirectToAction(nameof(View), new { id = taskVariant.Id });
             }
@@ -128,58 +201,126 @@ namespace KaCake.Controllers
             return View(taskVariant);
         }
 
-        private void PopulateAddAssignmentData(List<SelectListItem> usersToRemove)
+        private void PopulateAddAssignmentData(int courseId, int taskVariantId)
         {
-            var usersToRemoveIds = new HashSet<string>(usersToRemove.Select(user => user.Value));
-
-            var roleId = _context.Roles.First(role => role.Name == RoleNames.Admin).Id;
-            ViewData["Reviewers"] = _context.Users.Where(user => user.Roles.Select(role => role.RoleId).Contains(roleId))
+            ViewData["Reviewers"] = _context.Users
+                .Include(user => user.TeachingCourses)
+                .Where(user => user.TeachingCourses.Any(c => c.CourseId == courseId)) // is course teacher
                 .Select(user => new SelectListItem
                 {
                     Text = user.FullName,
                     Value = user.Id
                 }).ToList();
 
-            ViewData["UsersToAdd"] = _context.Users
-                .Where(user => !usersToRemoveIds.Contains(user.Id))
+            ViewData["UsersToAdd"] = _taskVariantLogic.GetStudentsCouldBeAdded(courseId, taskVariantId)
                 .Select(user => new SelectListItem()
                 {
                     Text = user.FullName,
-                    Value = user.Id
+                    Value = user.UserId
                 }).ToList();
 
-            ViewData["UsersToRemove"] = usersToRemove;
+            ViewData["UsersToRemove"] = _taskVariantLogic.GetStudentsCouldBeRemoved(courseId, taskVariantId)
+                .Select(user => new SelectListItem()
+                {
+                    Text = user.FullName,
+                    Value = user.UserId
+                }).ToList();
+        }
 
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}")]
+        public IActionResult GetStudentsCouldBeAdded(int courseId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.GetStudentsCouldBeAdded(courseId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}/{taskVariantId}")]
+        public IActionResult GetStudentsCouldBeAdded(int courseId, int taskVariantId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.GetStudentsCouldBeAdded(courseId, taskVariantId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
+        }
+
+        [Authorize]
+        [Route("api/[controller]/[action]/{courseId}/{taskVariantId}")]
+        public IActionResult GetStudentsCouldBeRemoved(int courseId, int taskVariantId)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                return new ObjectResult(_taskVariantLogic.GetStudentsCouldBeRemoved(courseId, taskVariantId));
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
 
         [HttpGet]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult AddAssignments(int id)
         {
-            var editingVariant = _context.TaskVariants
-                .Where(variant => variant.Id == id)
-                .Select(variant => new
-                {
-                    variant.Id,
-                    variant.Name,
-                    UsersToRemove =
-                    variant.Assignments.Select(assignment => new
-                    {
-                        assignment.User.Id,
-                        Name = assignment.User.FullName
-                    })
-                })
-                .FirstOrDefault();
+            string userId = _userManager.GetUserId(User);
 
-            if (editingVariant == null)
+            var taskVariant = _context.TaskVariants
+                .Include(tv => tv.TaskGroup)
+                .Include(tv => tv.Assignments)
+                .FirstOrDefault(tv => tv.Id == id);
+
+            var taskVariantAssignments = _context.Assignments
+                .Include(ass => ass.User)
+                .Join(taskVariant.Assignments,
+                    ass => ass.TaskVariantId,
+                    tvAss => tvAss.TaskVariantId,
+                    (ass, tvAss) => ass);
+
+            if (taskVariant == null)
                 return NotFound();
-
-            var usersToRemove = editingVariant.UsersToRemove.Select(user => new SelectListItem()
+            if(!KaCakeUtils.IsCourseTeacher(_context, taskVariant.TaskGroup.CourseId, userId))
             {
-                Text = user.Name,
-                Value = user.Id
-            }).ToList();
-            PopulateAddAssignmentData(usersToRemove);
+                return Challenge();
+            }
+
+            var editingVariant = new
+            {
+                taskVariant.Id,
+                taskVariant.Name,
+                UsersToRemove = taskVariantAssignments
+                    .Select(assignment => new
+                    {
+                        assignment.UserId,
+                        Name = assignment.User.FullName
+                    }).ToList()
+            };
+            
+            PopulateAddAssignmentData(taskVariant.TaskGroup.CourseId, taskVariant.Id);
 
             return View(new AddAsignmentsViewModel()
             {
@@ -190,61 +331,56 @@ namespace KaCake.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = RoleNames.Admin)]
         public IActionResult AddAssignments(AddAsignmentsViewModel viewModel)
         {
+            string userId = _userManager.GetUserId(User);
+            
             if (ModelState.IsValid)
             {
-                var reviewer = _context.Users.Find(viewModel.ReviewerId);
-                if (reviewer == null)
+                if (_taskVariantLogic.AddAssignments(userId, viewModel.TaskVariantId, viewModel))
                 {
-                    ModelState.AddModelError("Wrong reviewer", "Wrong reviewer");
-                }
-                else
-                {
-                    if (viewModel.UsersToRemove != null)
-                    {
-                        _context.Assignments.RemoveRange(
-                            _context.Assignments.Where(
-                                assignment => viewModel.UsersToRemove.Contains(assignment.UserId)
-                            )
-                        );
-                    }
-
-                    if (viewModel.UsersToAdd != null)
-                    {
-                        _context.Assignments.AddRange(viewModel.UsersToAdd.Select(user => new Assignment()
-                        {
-                            TaskVariantId = viewModel.TaskVariantId,
-                            DeadlineUtc = viewModel.DeadlineUtc,
-                            UserId = user,
-                            ReviewerId = reviewer.Id
-                        }));
-                    }
-
-                    _context.SaveChanges();
                     return RedirectToAction("View", new { id = viewModel.TaskVariantId });
                 }
             }
 
-            var editingVariant = _context.TaskVariants
-                .Where(variant => variant.Id == viewModel.TaskVariantId)
-                .Select(variant => variant.Assignments.Select(assignment => new
-                {
-                    assignment.User.Id,
-                    Name = assignment.User.FullName
-                })
-                )
-                .FirstOrDefault();
+            var taskVariant = _context.TaskVariants
+                .Include(tv => tv.TaskGroup)
+                .FirstOrDefault(tv => tv.Id == viewModel.TaskVariantId);
 
-            var usersToRemove = editingVariant.Select(user => new SelectListItem()
+            if (taskVariant == null)
             {
-                Text = user.Name,
-                Value = user.Id
-            }).ToList();
-            PopulateAddAssignmentData(usersToRemove);
+                return NotFound();
+            }
+            PopulateAddAssignmentData(taskVariant.TaskGroup.CourseId, taskVariant.Id);
 
             return View(viewModel);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("api/[controller]/[action]/{taskVariantId}")]
+        public IActionResult AddAssignments(int taskVariantId, [FromBody] AddAsignmentsViewModel viewModel)
+        {
+            string userId = _userManager.GetUserId(HttpContext.User);
+            try
+            {
+                if(_taskVariantLogic.AddAssignments(userId, taskVariantId, viewModel))
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500);
+                }
+            }
+            catch (NotFoundException)
+            {
+                return NotFound();
+            }
+            catch (IllegalAccessException)
+            {
+                return Challenge();
+            }
         }
     }
 }

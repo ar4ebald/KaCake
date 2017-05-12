@@ -6,6 +6,7 @@ using KaCake.ViewModels.Assignment;
 using KaCake.ViewModels.Course;
 using KaCake.ViewModels.TaskVariant;
 using IndexViewModel = KaCake.ViewModels.Home.IndexViewModel;
+using KaCake.Data.Models;
 
 namespace KaCake.Controllers
 {

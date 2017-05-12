@@ -12,6 +12,10 @@ namespace KaCake.Data.Models
 
         public string Description { get; set; }
 
+        public CourseCreator Creator { get; set; }
+
+        public ICollection<CourseTeacher2> Teachers { get; set; }
+
         public ICollection<CourseEnrollment> Students { get; set; }
 
         public ICollection<TaskGroup> TaskGroups { get; set; }
