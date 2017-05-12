@@ -114,6 +114,7 @@
         var comment = null;
         var allComments = [];
         var commentsList = [];
+        var files = [];
 
         var savedVal = "Save";
         var needToSaveVal = "Save *";
@@ -140,7 +141,17 @@
         };
 
         var removeCommentAt = function (i) {
+            var fileName = comments[i].file;
+
             comments.splice(i, 1);
+
+            for (var j = 0; j < files.length; ++j) {
+                if (files[j] == fileName) {
+                    return;
+                }
+            }
+
+            files.push(fileName);
         }
 
         var updateCommentsList = function () {
@@ -320,7 +331,7 @@
             console.log(comments);
 
             var commentsToSave = {};
-            var files = [];
+            var filesToSave = [];
 
             for (var i = 0; i < comments.length; ++i) {
                 var c = comments[i];
@@ -328,7 +339,7 @@
                 var file = c.file;
                 if (!commentsToSave[file]) {
                     commentsToSave[file] = [];
-                    files.push(file);
+                    filesToSave.push(file);
                 }
 
                 var commentToPush = new Object();
@@ -343,17 +354,22 @@
             }
 
             var counter = 0;
-
+            
+            var emptyFiles = [];
             for (var i = 0; i < files.length; ++i) {
-                var file = files[i];
+                if (!commentsToSave[files[i]]) {
+                    emptyFiles.push(files[i]);
+                }
+            }
 
+            var callSave = function (file, commentsToSave) {
                 $.get("../SaveComments/@Model.SubmissionId?file=" +
                                 encodeURI(file) +
                     "&commentsJson=" +
-                        encodeURI(JSON.stringify(commentsToSave[file])),
+                        encodeURI(JSON.stringify(commentsToSave)),
                     function (result) {
                         counter++;
-                        if (counter == files.length) {
+                        if (counter == filesToSave.length + emptyFiles.length) {
                             console.log(result);
                             $('#comment_submitted_footer').collapse("show");
                             $('#save_comments').text(savedVal);
@@ -368,7 +384,15 @@
                         $('#comment_submit_error').collapse("hide");
                     }, 3000);
                 });
+            }
 
+            for (var i = 0; i < filesToSave.length; ++i) {
+                var file = filesToSave[i];
+                callSave(file, commentsToSave[file]);
+            }
+
+            for (var i = 0; i < emptyFiles.length; ++i) {
+                callSave(emptyFiles[i], []);
             }
         }
 
