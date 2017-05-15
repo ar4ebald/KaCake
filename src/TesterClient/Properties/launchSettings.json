@@ -2,7 +2,7 @@
   "profiles": {
     "TesterClient": {
       "commandName": "Project",
-      "commandLineArgs": "http://localhost:59928",
+      "commandLineArgs": "http://kacake.azurewebsites.net",
       "workingDirectory": "C:\\dev\\KaCake\\src\\TesterClient\\bin\\Debug\\netcoreapp1.1"
     }
   }

@@ -51,7 +51,7 @@ namespace KaCake.Controllers
 
         public IActionResult GetTester(int id)
         {
-            var tester = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", id.ToString()));
+            var tester = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", id + ".zip"));
 
             if (tester.Exists)
                 return File(tester.OpenRead(), "application/octet-stream");

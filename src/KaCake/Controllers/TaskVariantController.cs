@@ -27,12 +27,13 @@ namespace KaCake.Controllers
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IHostingEnvironment _env;
         private readonly TaskVariantLogic _taskVariantLogic;
-        
+
         public TaskVariantController(
-            ApplicationDbContext context, 
+            ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager, 
-            IHostingEnvironment env){
+            RoleManager<IdentityRole> roleManager,
+            IHostingEnvironment env)
+        {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
@@ -51,7 +52,7 @@ namespace KaCake.Controllers
                 TaskVariantViewModel viewModel = _taskVariantLogic.GetTaskVariant(userId, id);
                 return View(viewModel);
             }
-            catch(NotFoundException)
+            catch (NotFoundException)
             {
                 return NotFound();
             }
@@ -66,11 +67,11 @@ namespace KaCake.Controllers
             {
                 return new ObjectResult(_taskVariantLogic.GetTaskVariant(userId, taskVariantId));
             }
-            catch(NotFoundException)
+            catch (NotFoundException)
             {
                 return NotFound();
             }
-            catch(IllegalAccessException)
+            catch (IllegalAccessException)
             {
                 return Challenge();
             }
@@ -81,7 +82,7 @@ namespace KaCake.Controllers
         {
             string userId = _userManager.GetUserId(User);
             TaskGroup taskGroup = _context.TaskGroups.Find(id);
-            if(!KaCakeUtils.IsCourseTeacher(_context, taskGroup.CourseId, userId))
+            if (!KaCakeUtils.IsCourseTeacher(_context, taskGroup.CourseId, userId))
             {
                 return Challenge();
             }
@@ -146,22 +147,21 @@ namespace KaCake.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(TaskVariantViewModel taskVariant)
+        public async Task<IActionResult> Create(TaskVariantViewModel taskVariant)
         {
             string userId = _userManager.GetUserId(User);
 
             if (ModelState.IsValid)
             {
-                var testerFile = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", taskVariant.Id.ToString()));
-                if (taskVariant.TesterArchive == null)
+                var testerFile = new FileInfo(Path.Combine(_env.WebRootPath, "App_Data", "Testers", taskVariant.Id + ".zip"));
+
+                if (testerFile.Exists)
+                    testerFile.Delete();
+
+                if (taskVariant.TesterArchive != null && taskVariant.TesterArchive.Length != 0)
                 {
-                    if (testerFile.Exists)
-                        testerFile.Delete();
-                }
-                else
-                {
-                    using (var file = testerFile.OpenWrite())
-                        taskVariant.TesterArchive.CopyTo(file);
+                    using (var fileStream = new FileStream(testerFile.FullName, FileMode.Create))
+                        await taskVariant.TesterArchive.CopyToAsync(fileStream);
                 }
 
                 TaskVariant editingTaskVariant;
@@ -171,11 +171,11 @@ namespace KaCake.Controllers
                     {
                         taskVariant = _taskVariantLogic.EditTaskVariant(userId, taskVariant.Id, taskVariant);
                     }
-                    catch(NotFoundException)
+                    catch (NotFoundException)
                     {
                         return NotFound();
                     }
-                    catch(IllegalAccessException)
+                    catch (IllegalAccessException)
                     {
                         Challenge();
                     }
@@ -303,7 +303,7 @@ namespace KaCake.Controllers
 
             if (taskVariant == null)
                 return NotFound();
-            if(!KaCakeUtils.IsCourseTeacher(_context, taskVariant.TaskGroup.CourseId, userId))
+            if (!KaCakeUtils.IsCourseTeacher(_context, taskVariant.TaskGroup.CourseId, userId))
             {
                 return Challenge();
             }
@@ -319,7 +319,7 @@ namespace KaCake.Controllers
                         Name = assignment.User.FullName
                     }).ToList()
             };
-            
+
             PopulateAddAssignmentData(taskVariant.TaskGroup.CourseId, taskVariant.Id);
 
             return View(new AddAsignmentsViewModel()
@@ -334,7 +334,7 @@ namespace KaCake.Controllers
         public IActionResult AddAssignments(AddAsignmentsViewModel viewModel)
         {
             string userId = _userManager.GetUserId(User);
-            
+
             if (ModelState.IsValid)
             {
                 if (_taskVariantLogic.AddAssignments(userId, viewModel.TaskVariantId, viewModel))
@@ -364,7 +364,7 @@ namespace KaCake.Controllers
             string userId = _userManager.GetUserId(HttpContext.User);
             try
             {
-                if(_taskVariantLogic.AddAssignments(userId, taskVariantId, viewModel))
+                if (_taskVariantLogic.AddAssignments(userId, taskVariantId, viewModel))
                 {
                     return Ok();
                 }

@@ -24,6 +24,6 @@
         <a asp-controller="TaskVariant" asp-action="AddAssignments" asp-route-id="@Model.Id" class="btn btn-default">
             Add or remove assignments (@Model.AssignmentsCount)
         </a>
-        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.CourseId" asp-route-taskVariantId="@Model.Id" class="btn btn-warning"><span class="glyphicon glyphicon-pencil"></span> Edit TaskGroup</a>
+        <a asp-controller="TaskVariant" asp-action="Create" asp-route-id="@Model.TaskGroupId" asp-route-taskVariantId="@Model.Id" class="btn btn-warning"><span class="glyphicon glyphicon-pencil"></span> Edit TaskGroup</a>
     }
 </div>

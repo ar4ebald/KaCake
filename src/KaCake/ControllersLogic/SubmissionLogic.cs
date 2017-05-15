@@ -24,56 +24,50 @@ namespace KaCake.ControllersLogic
             _context = context;
             _userManager = userManager;
         }
-        
+
         public SubmissionViewModel GetSubmission(string userId, int submissionId)
         {
             var submission = _context.Submissions
-                .Include(sub => sub.Assignment)
-                .FirstOrDefault(sub => sub.Id == submissionId);
+                .Where(i => i.Id == submissionId && i.Assignment.UserId == userId)
+                .Select(i => new SubmissionViewModel()
+                {
+                    Id = i.Id,
+                    Time = i.Time,
+                    ReviewTitle = i.ReviewTitle,
+                    Status = i.Status,
+                    ReviewMessage = i.ReviewMessage
+                })
+                .FirstOrDefault();
 
-            if(submission == null)
+            if (submission == null)
             {
                 throw new NotFoundException();
             }
 
-            if(submission.Assignment.UserId != userId)
-            {
-                throw new IllegalAccessException();
-            }
-
-            SubmissionViewModel viewModel = new SubmissionViewModel()
-                {
-                    Id = submission.Id,
-                    Time = submission.Time,
-                    ReviewTitle = submission.ReviewTitle,
-                    Status = submission.Status,
-                    ReviewMessage = submission.ReviewMessage
-            };
-
-            return viewModel;
+            return submission;
         }
-        
+
         public int DeleteSubmssion(string userId, int id)
         {
             var submission = _context.Submissions
                 .Include(sub => sub.Assignment)
                 .FirstOrDefault(sub => sub.Id == id);
 
-            if(submission == null)
+            if (submission == null)
             {
                 throw new NotFoundException();
             }
-            if(submission.Assignment.UserId != userId)
+            if (submission.Assignment.UserId != userId)
             {
                 throw new IllegalAccessException();
             }
 
             var toDelete = new
-                {
-                    Submission = submission,
-                    submission.Assignment,
-                    SubmissionsCount = submission.Assignment.Submissions.Count
-                };
+            {
+                Submission = submission,
+                submission.Assignment,
+                SubmissionsCount = submission.Assignment.Submissions.Count
+            };
 
             Directory.Delete(toDelete.Submission.Path, true);
 

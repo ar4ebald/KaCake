@@ -203,21 +203,13 @@ namespace KaCake.ControllersLogic
                 UserId = callerId,
                 CourseId = courseToAdd.Id
             };
-            
-            // And now the id of the course could be obtained
-            CourseTeacher2 courseTeacher = new CourseTeacher2
-            {
-                CourseId = courseToAdd.Id,
-                TeacherId = callerId,
-                AppointerId = callerId,
-            };
+
             var teachers = new List<CourseTeacher2>();
-            teachers.Add(courseTeacher);
 
             // Add all the 'Teachers to add'
             if (course.TeachersToAdd != null)
             {
-                foreach (string teacherToAddId in course.TeachersToAdd)
+                foreach (string teacherToAddId in course.TeachersToAdd.Concat(new[] { callerId }).Distinct())
                 {
                     teachers.Add(new CourseTeacher2
                     {
@@ -344,7 +336,7 @@ namespace KaCake.ControllersLogic
             {
                 throw new NotFoundException();
             }
-            if(!CanDeleteCourse(userId, courseId))
+            if (!CanDeleteCourse(userId, courseId))
             {
                 throw new IllegalAccessException();
             }

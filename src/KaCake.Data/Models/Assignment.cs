@@ -35,6 +35,7 @@ namespace KaCake.Data.Models
         /// <summary>
         /// Deadline of this assignment in Coordinated Universal Time format (like Greenwich)
         /// </summary>
+        [DisplayFormat(DataFormatString = "{0:DD.MM.YYYY HH:mm}")]
         public DateTime DeadlineUtc { get; set; }
 
         public ICollection<Submission> Submissions { get; set; }

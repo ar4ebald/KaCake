@@ -77,7 +77,10 @@ namespace KaCake.ControllersLogic
                     Submissions = assignment.Submissions.Select(submission => new SubmissionViewModel()
                     {
                         Id = submission.Id,
-                        Time = submission.Time
+                        Time = submission.Time,
+                        Status = submission.Status,
+                        ReviewTitle = submission.ReviewTitle,
+                        ReviewMessage = submission.ReviewMessage
                     }).ToList(),
                     NewSubmissionViewModel = new AddSubmissionViewModel()
                     {
