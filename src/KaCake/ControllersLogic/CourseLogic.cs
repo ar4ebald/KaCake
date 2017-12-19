@@ -98,7 +98,7 @@ namespace KaCake.ControllersLogic
             }
 
             return _context.Users
-                .Where(t => !editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Id)) && t.Id != callerId)
+                .Where(t => !editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(t.Id)))
                 .Select(user =>
                 new UserInfoViewModel
                 {
@@ -239,19 +239,22 @@ namespace KaCake.ControllersLogic
         public CourseViewModel Edit(string callerId, int courseId, CreateViewModel course)
         {
             Course editingCourse;
-            if ((editingCourse =
-                _context.Courses
-                    .Include(c => c.Teachers)
-                    .Include(c => c.Students)
-                    .FirstOrDefault(c => c.Id == courseId)) != null)
+            if ((editingCourse =_context.Courses.Find(courseId)) != null)
             {
-                // The course could be edited only by a teacher of that course
-                if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
+                // The course could be edited only by a teacher of that course or it's creator
+                if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId) || editingCourse.CreatorId.Equals(callerId))
                 {
-                    CourseTeacher appointer = editingCourse.Teachers.First(t => t.TeacherId.Equals(callerId));
-
                     editingCourse.Name = course.Name;
                     editingCourse.Description = course.Description;
+
+                    if(course.TeachersToAdd != null || course.TeachersToRemove != null)
+                    {
+                        _context.Entry(editingCourse).Collection(c => c.Teachers).Load();
+                    }
+                    if(course.StudentsToAdd != null || course.StudentsToRemove != null)
+                    {
+                        _context.Entry(editingCourse).Collection(c => c.Students).Load();
+                    }
 
                     if (course.TeachersToAdd != null)
                     {
@@ -263,21 +266,29 @@ namespace KaCake.ControllersLogic
                                 AppointerId = callerId
                             }
                         ).ToList();
-                        //list.ForEach(teacher => appointer.AppointedTeachers.Add(teacher));
                         list.ForEach(teacher => editingCourse.Teachers.Add(teacher));
                     }
 
                     if (course.TeachersToRemove != null)
                     {
-                        var teachersToRemove = course.TeachersToRemove
-                            .Where(userId => editingCourse.Teachers.Any(teacher => teacher.TeacherId.Equals(userId)))
-                            .Select(teacherId => editingCourse.Teachers.First(teacher => teacher.TeacherId.Equals(teacherId)));
-
-                        foreach (var teacherToRemove in teachersToRemove)
+                        foreach (var userId in course.TeachersToRemove)
                         {
+                            var teacherToRemove = editingCourse.Teachers.FirstOrDefault(t => t.TeacherId.Equals(userId));
+                            if(teacherToRemove == null)
+                            {
+                                continue;
+                            }
+
+                            _context.Entry(teacherToRemove).Collection(c => c.AppointedTeachers).Load();
+
                             // Only appointer can remove teachers appointed by him
                             if (KaCakeUtils.isAppointer(editingCourse, callerId, teacherToRemove))
                             {
+                                foreach(var appointedTeacher in teacherToRemove.AppointedTeachers)
+                                {
+                                    appointedTeacher.AppointerId = callerId;
+                                }
+
                                 editingCourse.Teachers.Remove(teacherToRemove);
                             }
                             else

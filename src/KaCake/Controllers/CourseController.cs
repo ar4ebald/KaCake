@@ -179,7 +179,7 @@ namespace KaCake.Controllers
                         .FirstOrDefault(c => c.Id == id.Value)) != null)
             {
                 // Only teachers could edit course
-                if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
+                if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId) || _courseLogic.CanDeleteCourse(callerId, id.Value))
                 {
                     try
                     {
