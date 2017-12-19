@@ -43,19 +43,19 @@ namespace KaCake.Utils
             return false;
         }
 
-        public static bool isAppointer(Course course, string possibleAppointerId, CourseTeacher2 teacher)
+        public static bool isAppointer(Course course, string possibleAppointerId, CourseTeacher teacher)
         {
-            if (teacher.AppointerId == null || teacher.AppointerId.Equals(teacher.TeacherId))
-            {
-                return false;
-            }
-            if(teacher.AppointerId.Equals(possibleAppointerId))
+            if(teacher.Appointer.TeacherId.Equals(possibleAppointerId))
             {
                 return true;
             }
+            if(teacher.Appointer.TeacherId.Equals(teacher.TeacherId))
+            {
+                return false; // Stop here
+            }
 
             // Find a CourseTeacher with id equals to teacher.AppointerId
-            CourseTeacher2 appointer = course.Teachers.FirstOrDefault(a => teacher.AppointerId.Equals(a.TeacherId));
+            CourseTeacher appointer = course.Teachers.FirstOrDefault(a => teacher.Appointer.TeacherId.Equals(a.TeacherId));
             
             if(appointer != null)
             {

@@ -87,7 +87,7 @@ namespace KaCake.Controllers
                 return Challenge();
             }
 
-            TaskVariant editingTaskVariant;
+            TaskVariant editingTaskVariant = null;
             if (taskVariantId.HasValue && (editingTaskVariant = _context.TaskVariants.Find(taskVariantId.Value)) != null)
             {
                 return View(new TaskVariantViewModel()

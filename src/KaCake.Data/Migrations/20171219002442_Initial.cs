@@ -37,20 +37,6 @@ namespace KaCake.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Courses",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Description = table.Column<string>(nullable: true),
-                    Name = table.Column<string>(maxLength: 256, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Courses", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
                 {
@@ -76,6 +62,27 @@ namespace KaCake.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUserTokens", x => new { x.UserId, x.LoginProvider, x.Name });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Courses",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    CreatorId = table.Column<string>(nullable: false),
+                    Description = table.Column<string>(nullable: true),
+                    Name = table.Column<string>(maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Courses", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Courses_AspNetUsers_CreatorId",
+                        column: x => x.CreatorId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -115,51 +122,6 @@ namespace KaCake.Data.Migrations
                         name: "FK_AspNetUserLogins_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "CourseEnrollment",
-                columns: table => new
-                {
-                    CourseId = table.Column<int>(nullable: false),
-                    UserId = table.Column<string>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_CourseEnrollment", x => new { x.CourseId, x.UserId });
-                    table.ForeignKey(
-                        name: "FK_CourseEnrollment_Courses_CourseId",
-                        column: x => x.CourseId,
-                        principalTable: "Courses",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_CourseEnrollment_AspNetUsers_UserId",
-                        column: x => x.UserId,
-                        principalTable: "AspNetUsers",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TaskGroups",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    CourseId = table.Column<int>(nullable: false),
-                    Description = table.Column<string>(nullable: true),
-                    Name = table.Column<string>(maxLength: 256, nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TaskGroups", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TaskGroups_Courses_CourseId",
-                        column: x => x.CourseId,
-                        principalTable: "Courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -205,6 +167,82 @@ namespace KaCake.Data.Migrations
                         name: "FK_AspNetUserRoles_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CourseEnrollment",
+                columns: table => new
+                {
+                    CourseId = table.Column<int>(nullable: false),
+                    UserId = table.Column<string>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseEnrollment", x => new { x.CourseId, x.UserId });
+                    table.ForeignKey(
+                        name: "FK_CourseEnrollment_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseEnrollment_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CourseTeacher",
+                columns: table => new
+                {
+                    CourseId = table.Column<int>(nullable: false),
+                    TeacherId = table.Column<string>(nullable: false),
+                    AppointerId = table.Column<string>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CourseTeacher", x => new { x.CourseId, x.TeacherId });
+                    table.ForeignKey(
+                        name: "FK_CourseTeacher_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseTeacher_AspNetUsers_TeacherId",
+                        column: x => x.TeacherId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CourseTeacher_CourseTeacher_CourseId_AppointerId",
+                        columns: x => new { x.CourseId, x.AppointerId },
+                        principalTable: "CourseTeacher",
+                        principalColumns: new[] { "CourseId", "TeacherId" },
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TaskGroups",
+                columns: table => new
+                {
+                    Id = table.Column<int>(nullable: false)
+                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
+                    CourseId = table.Column<int>(nullable: false),
+                    Description = table.Column<string>(nullable: true),
+                    Name = table.Column<string>(maxLength: 256, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TaskGroups", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TaskGroups_Courses_CourseId",
+                        column: x => x.CourseId,
+                        principalTable: "Courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -274,6 +312,10 @@ namespace KaCake.Data.Migrations
                     AssignmentTaskVariantId = table.Column<int>(nullable: false),
                     AssignmentUserId = table.Column<string>(nullable: false),
                     Path = table.Column<string>(nullable: true),
+                    PickedForTestingTimeUtc = table.Column<DateTime>(nullable: false),
+                    ReviewMessage = table.Column<string>(nullable: true),
+                    ReviewTitle = table.Column<string>(nullable: true),
+                    Status = table.Column<int>(nullable: false),
                     Time = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
@@ -309,9 +351,24 @@ namespace KaCake.Data.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Courses_CreatorId",
+                table: "Courses",
+                column: "CreatorId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_CourseEnrollment_UserId",
                 table: "CourseEnrollment",
                 column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseTeacher_TeacherId",
+                table: "CourseTeacher",
+                column: "TeacherId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_CourseTeacher_CourseId_AppointerId",
+                table: "CourseTeacher",
+                columns: new[] { "CourseId", "AppointerId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Submissions_AssignmentTaskVariantId_AssignmentUserId",
@@ -361,6 +418,9 @@ namespace KaCake.Data.Migrations
                 name: "CourseEnrollment");
 
             migrationBuilder.DropTable(
+                name: "CourseTeacher");
+
+            migrationBuilder.DropTable(
                 name: "Submissions");
 
             migrationBuilder.DropTable(
@@ -385,9 +445,6 @@ namespace KaCake.Data.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
-
-            migrationBuilder.DropTable(
                 name: "TaskVariants");
 
             migrationBuilder.DropTable(
@@ -395,6 +452,9 @@ namespace KaCake.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "Courses");
+
+            migrationBuilder.DropTable(
+                name: "AspNetUsers");
         }
     }
 }

@@ -9,13 +9,13 @@ using KaCake.Data.Models;
 namespace KaCake.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20170507015456_Initial")]
+    [Migration("20171219002442_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
             modelBuilder
-                .HasAnnotation("ProductVersion", "1.1.1")
+                .HasAnnotation("ProductVersion", "1.1.2")
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
             modelBuilder.Entity("KaCake.Data.Models.ApplicationUser", b =>
@@ -102,12 +102,17 @@ namespace KaCake.Data.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
+                    b.Property<string>("CreatorId")
+                        .IsRequired();
+
                     b.Property<string>("Description");
 
                     b.Property<string>("Name")
                         .HasMaxLength(256);
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatorId");
 
                     b.ToTable("Courses");
                 });
@@ -125,6 +130,24 @@ namespace KaCake.Data.Migrations
                     b.ToTable("CourseEnrollment");
                 });
 
+            modelBuilder.Entity("KaCake.Data.Models.CourseTeacher", b =>
+                {
+                    b.Property<int>("CourseId");
+
+                    b.Property<string>("TeacherId");
+
+                    b.Property<string>("AppointerId")
+                        .IsRequired();
+
+                    b.HasKey("CourseId", "TeacherId");
+
+                    b.HasIndex("TeacherId");
+
+                    b.HasIndex("CourseId", "AppointerId");
+
+                    b.ToTable("CourseTeacher");
+                });
+
             modelBuilder.Entity("KaCake.Data.Models.Submission", b =>
                 {
                     b.Property<int>("Id")
@@ -137,6 +160,14 @@ namespace KaCake.Data.Migrations
                         .IsRequired();
 
                     b.Property<string>("Path");
+
+                    b.Property<DateTime>("PickedForTestingTimeUtc");
+
+                    b.Property<string>("ReviewMessage");
+
+                    b.Property<string>("ReviewTitle");
+
+                    b.Property<int>("Status");
 
                     b.Property<DateTime>("Time");
 
@@ -309,6 +340,14 @@ namespace KaCake.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("KaCake.Data.Models.Course", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "Creator")
+                        .WithMany("CreatedCourses")
+                        .HasForeignKey("CreatorId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
             modelBuilder.Entity("KaCake.Data.Models.CourseEnrollment", b =>
                 {
                     b.HasOne("KaCake.Data.Models.Course", "Course")
@@ -319,6 +358,24 @@ namespace KaCake.Data.Migrations
                     b.HasOne("KaCake.Data.Models.ApplicationUser", "User")
                         .WithMany("Courses")
                         .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("KaCake.Data.Models.CourseTeacher", b =>
+                {
+                    b.HasOne("KaCake.Data.Models.Course", "Course")
+                        .WithMany("Teachers")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("KaCake.Data.Models.ApplicationUser", "Teacher")
+                        .WithMany("TeachingCourses")
+                        .HasForeignKey("TeacherId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("KaCake.Data.Models.CourseTeacher", "Appointer")
+                        .WithMany("AppointedTeachers")
+                        .HasForeignKey("CourseId", "AppointerId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 

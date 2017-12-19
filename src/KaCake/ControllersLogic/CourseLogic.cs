@@ -192,26 +192,23 @@ namespace KaCake.ControllersLogic
             Course courseToAdd = new Course()
             {
                 Name = course.Name,
-                Description = course.Description
+                Description = course.Description,
+                CreatorId = callerId
             };
             _context.Courses.Add(courseToAdd);
             _context.SaveChanges();
 
             // Then we can set a creator
-            courseToAdd.Creator = new CourseCreator
-            {
-                UserId = callerId,
-                CourseId = courseToAdd.Id
-            };
+            courseToAdd.CreatorId = callerId;
 
-            var teachers = new List<CourseTeacher2>();
+            var teachers = new List<CourseTeacher>();
 
             // Add all the 'Teachers to add'
             if (course.TeachersToAdd != null)
             {
                 foreach (string teacherToAddId in course.TeachersToAdd.Concat(new[] { callerId }).Distinct())
                 {
-                    teachers.Add(new CourseTeacher2
+                    teachers.Add(new CourseTeacher
                     {
                         CourseId = courseToAdd.Id,
                         TeacherId = teacherToAddId,
@@ -251,20 +248,23 @@ namespace KaCake.ControllersLogic
                 // The course could be edited only by a teacher of that course
                 if (editingCourse.Teachers.Any(teacher => teacher.TeacherId == callerId))
                 {
+                    CourseTeacher appointer = editingCourse.Teachers.First(t => t.TeacherId.Equals(callerId));
+
                     editingCourse.Name = course.Name;
                     editingCourse.Description = course.Description;
 
                     if (course.TeachersToAdd != null)
                     {
-                        course.TeachersToAdd.Select(
-                            teacherId => new CourseTeacher2
+                        var list = course.TeachersToAdd.Select(
+                            teacherId => new CourseTeacher
                             {
                                 CourseId = course.Id.GetValueOrDefault(),
                                 TeacherId = teacherId,
                                 AppointerId = callerId
-
                             }
-                        ).ToList().ForEach(teacher => editingCourse.Teachers.Add(teacher));
+                        ).ToList();
+                        //list.ForEach(teacher => appointer.AppointedTeachers.Add(teacher));
+                        list.ForEach(teacher => editingCourse.Teachers.Add(teacher));
                     }
 
                     if (course.TeachersToRemove != null)
@@ -358,7 +358,7 @@ namespace KaCake.ControllersLogic
                 .Include(u => u.CreatedCourses)
                 .FirstOrDefault(u => u.Id == userId);
 
-            return (user != null && user.CreatedCourses.Any(c => c.CourseId == courseId))
+            return (user != null && user.CreatedCourses.Any(c => c.Id == courseId))
                 || (adminRole != null && adminRole.Users.Any(u => u.UserId == userId));
         }
 

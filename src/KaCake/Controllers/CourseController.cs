@@ -172,7 +172,7 @@ namespace KaCake.Controllers
         {
             string callerId = _userManager.GetUserId(HttpContext.User);
 
-            Course editingCourse;
+            Course editingCourse = null;
             if (id.HasValue 
                 && (editingCourse = 
                     _context.Courses.Include(c => c.Teachers)
@@ -262,7 +262,7 @@ namespace KaCake.Controllers
             {
                 CourseViewModel result;
 
-                Course editingCourse;
+                Course editingCourse = null;
 
                 try
                 {

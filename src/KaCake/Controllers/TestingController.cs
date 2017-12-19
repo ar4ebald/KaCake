@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using KaCake.Data;
-using KaCake.Data.Migrations;
+//using KaCake.Data.Migrations;
 using KaCake.Data.Models;
 using KaCake.ViewModels.Submission;
 using Microsoft.AspNetCore.Hosting;

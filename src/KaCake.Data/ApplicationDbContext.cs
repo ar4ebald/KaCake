@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using KaCake.Data.Models;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace KaCake.Data
 {
@@ -14,8 +15,14 @@ namespace KaCake.Data
         
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
-        {
+        {}
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlServer(@"Data Source=(localdb)\ProjectsV13;Initial Catalog=NewKaCakeDatabase;Integrated Security=True");
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -73,8 +80,14 @@ namespace KaCake.Data
                 .IsRequired();
 
             // CourseTeacher key definition
-            builder.Entity<CourseTeacher2>()
+            builder.Entity<CourseTeacher>()
                 .HasKey(courseTeacher => new { courseTeacher.CourseId, courseTeacher.TeacherId });
+
+            builder.Entity<CourseTeacher>()
+                .HasMany(appointer => appointer.AppointedTeachers)
+                .WithOne(teacher => teacher.Appointer)
+                .HasForeignKey(teacher => new { teacher.CourseId, teacher.AppointerId })
+                .IsRequired();
 
             // Course to CourseTeacher as one-to-many
             builder.Entity<Course>()
@@ -89,19 +102,16 @@ namespace KaCake.Data
                 .WithOne(teacher => teacher.Teacher)
                 .HasForeignKey(teacher => teacher.TeacherId)
                 .IsRequired();
-
-            builder.Entity<CourseCreator>()
-                .HasKey(creator => new { creator.UserId, creator.CourseId });
-
+            
             builder.Entity<Course>()
                 .HasOne(course => course.Creator)
-                .WithOne(creator => creator.Course)
-                .IsRequired();
+                .WithMany(creator => creator.CreatedCourses)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
 
             builder.Entity<ApplicationUser>()
                 .HasMany(user => user.CreatedCourses)
-                .WithOne(creator => creator.User)
-                .HasForeignKey(creator => creator.UserId)
+                .WithOne(course => course.Creator)
                 .IsRequired();
             
 
